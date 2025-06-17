@@ -83,6 +83,13 @@ export class ShiftStore {
     }
   }
 
+  unassignEmployee = (shiftId: string) => {
+    const shift = this.shifts.find(s => s.id === shiftId);
+    if (shift) {
+      shift.employeeId = undefined;
+    }
+  }
+
   addEmployee = (name: string) => {
     const id = (Math.max(0, ...this.employees.map(e => +e.id)) + 1).toString();
     this.employees.push({ id, name });

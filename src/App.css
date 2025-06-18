@@ -3,6 +3,7 @@ body {
   font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
   background: linear-gradient(135deg, #232526 0%, #414345 100%);
   min-height: 100vh;
+  direction: rtl;
 }
 
 .App {
@@ -106,7 +107,6 @@ h1 {
 }
 
 .shift-cell:empty::after {
-  content: 'Drop here';
   color: #61dafb99;
   font-size: 0.95em;
   font-weight: 400;
@@ -165,6 +165,7 @@ h1 {
   justify-content: center;
   gap: 18px;
   margin-bottom: 18px;
+  flex-direction: row-reverse;
 }
 .calendar-btn {
   background: #23272f;
@@ -234,4 +235,3 @@ h1 {
   background: #61dafb44;
   border-radius: 8px;
 }
-

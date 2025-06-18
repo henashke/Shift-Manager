@@ -24,7 +24,7 @@ const AssignEmployeeDialog: React.FC<AssignEmployeeDialogProps> = observer(({ op
       <DialogTitle>Assign Employee to {shift.day} {shift.type}</DialogTitle>
       <DialogContent>
         <List>
-          {store.employees.map(emp => (
+          {store.konanim.map(emp => (
             <ListItem key={emp.id} disablePadding>
               <ListItemButton onClick={() => handleAssign(emp.id)}>
                 <ListItemText primary={emp.name} />

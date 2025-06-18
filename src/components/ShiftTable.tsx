@@ -6,11 +6,12 @@ import AssignEmployeeDialog from './AssignEmployeeDialog';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import PersonRemoveIcon from '@mui/icons-material/PersonRemove';
 
-const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-const shiftTypes = ['Day', 'Night'] as const;
+// Hebrew day and shift names
+const days = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
+const shiftTypes = ['יום', 'לילה'] as const;
 
 const ShiftTable: React.FC = observer(() => {
-  const { weekDates, shifts, employees, assignEmployee } = store;
+  const { weekDates, shifts, konanim, assignEmployee } = store;
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [selectedShiftId, setSelectedShiftId] = useState<string | null>(null);
   const [contextMenu, setContextMenu] = useState<{ mouseX: number; mouseY: number; shiftId: string | null } | null>(null);
@@ -79,57 +80,54 @@ const ShiftTable: React.FC = observer(() => {
   };
 
   return (
-    <>
-      <TableContainer component={Paper} sx={{ mb: 4, borderRadius: 3, background: 'rgba(34,34,34,0.95)' }}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ background: '#23272f', color: '#61dafb', fontWeight: 700 }}>Shift</TableCell>
-              {weekDates.map((date, idx) => (
-                <TableCell key={days[idx]} align="center" sx={{ background: '#23272f', color: '#61dafb', fontWeight: 700 }}>
-                  <Box>
-                    <Typography variant="body2">{days[idx]}</Typography>
-                    <Typography variant="caption" sx={{ background: '#23272f', borderRadius: 1, px: 1, color: '#fff' }}>{date.getDate()}</Typography>
-                  </Box>
-                </TableCell>
-              ))}
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {shiftTypes.map(shiftType => (
-              <TableRow key={shiftType}>
-                <TableCell sx={{ color: '#fff', fontWeight: 600 }}>{shiftType}</TableCell>
-                {weekDates.map((date, idx) => {
-                  const shift = shifts.find(s => s.date === date.toISOString() && s.type === shiftType);
-                  const employee = employees.find(e => e.id === shift?.employeeId);
-                  return (
-                    <TableCell
-                      key={date.toISOString() + shiftType}
-                      onDrop={e => onDrop(e, shift?.id || '')}
-                      onDragOver={onDragOver}
-                      onClick={() => shift && handleCellClick(shift.id)}
-                      onContextMenu={e => shift && handleContextMenu(e, shift.id)}
-                      sx={{ minHeight: 48, borderRadius: 2, background: '#282c34', color: '#fff', cursor: 'pointer' }}
-                    >
-                      {employee ? (
-                        <Box
-                          sx={{ background: 'linear-gradient(135deg, #61dafb 60%, #21a1f3 100%)', color: '#23272f', borderRadius: 1, px: 1, py: 0.5, fontWeight: 700 }}
-                          draggable
-                          onDragStart={e => onDragStart(e, employee.id, shift?.id)}
-                        >
-                          {employee.name}
-                        </Box>
-                      ) : (
-                        <Typography variant="caption" sx={{ color: '#61dafb99' }}>Drop here</Typography>
-                      )}
-                    </TableCell>
-                  );
-                })}
-              </TableRow>
+    <TableContainer component={Paper} sx={{ mt: 3, mb: 4, borderRadius: 3, boxShadow: 3, direction: 'rtl' }} dir="rtl">
+      <Table className="shift-table">
+        <TableHead>
+          <TableRow>
+            <TableCell></TableCell>
+            {weekDates.map((date, i) => (
+              <TableCell key={i} align="center">
+                <div className="calendar-day">{days[date.getDay()]}</div>
+                <div className="calendar-date">{date.toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit' })}</div>
+              </TableCell>
             ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {shiftTypes.map(shiftType => (
+            <TableRow key={shiftType}>
+              <TableCell sx={{ color: '#fff', fontWeight: 600 }}>{shiftType}</TableCell>
+              {weekDates.map((date) => {
+                const shift = shifts.find(s => s.date === date.toISOString() && s.type === shiftType);
+                const employee = konanim.find(e => e.id === shift?.employeeId);
+                return (
+                  <TableCell
+                    key={date.toISOString() + shiftType}
+                    align="center"
+                    onDrop={e => onDrop(e, shift?.id || '')}
+                    onDragOver={onDragOver}
+                    onClick={() => shift && handleCellClick(shift.id)}
+                    onContextMenu={e => shift && handleContextMenu(e, shift.id)}
+                    sx={{ minHeight: 48, borderRadius: 2, background: '#282c34', color: '#fff', cursor: 'pointer' }}
+                  >
+                    {employee ? (
+                      <Box
+                        sx={{ background: '#61dafb', color: '#23272f', borderRadius: 1, px: 1, py: 0.5, fontWeight: 700 }}
+                        draggable
+                        onDragStart={e => onDragStart(e, employee.id, shift?.id)}
+                      >
+                        {employee.name}
+                      </Box>
+                    ) : (
+                      <Typography variant="caption" sx={{ color: '#61dafb99' }}>כונן משובץ</Typography>
+                    )}
+                  </TableCell>
+                );
+              })}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
       <AssignEmployeeDialog open={assignDialogOpen} shiftId={selectedShiftId} onClose={() => setAssignDialogOpen(false)} />
       <Menu
         open={contextMenu !== null}
@@ -154,7 +152,7 @@ const ShiftTable: React.FC = observer(() => {
           <ListItemText>Remove Employee</ListItemText>
         </MenuItem>
       </Menu>
-    </>
+    </TableContainer>
   );
 });
 

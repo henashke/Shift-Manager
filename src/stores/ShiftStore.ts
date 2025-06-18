@@ -46,11 +46,11 @@ export class ShiftStore {
         setTimeout(() => {
             runInAction(() => {
                 this.konanim = [
-                    {id: '1', name: 'Alice', score: 0},
-                    {id: '2', name: 'Bob', score: 0},
-                    {id: '3', name: 'Charlie', score: 0},
-                    {id: '4', name: 'Diana', score: 0},
-                    {id: '5', name: 'Eve', score: 0},
+                    {id: '1', name: 'חן אשכנזי', score: 0},
+                    {id: '2', name: 'דור סהר', score: 0},
+                    {id: '3', name: 'רפאל ברדוגו', score: 0},
+                    {id: '4', name: 'אופק באר', score: 0},
+                    {id: '5', name: 'ליאור קוזברג', score: 0},
                 ];
                 this.loading = false;
             });

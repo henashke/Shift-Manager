@@ -1,12 +1,18 @@
 import React, {useState} from 'react';
 import {observer} from 'mobx-react-lite';
-import {Box, Button, Paper, Typography} from '@mui/material';
-import store from '../stores/ShiftStore';
-import AddEmployeeDialog from "./AddEmployeeDialog";
+import {Box, Button, Menu, MenuItem, Paper, Typography} from '@mui/material';
+import store, {Employee} from '../stores/ShiftStore';
+import AddEmployeeDialog from './AddEmployeeDialog';
+import DeleteKonan from "./dialogs/DeleteKonan";
+import EditKonan from "./dialogs/EditKonan";
 
 const EmployeeList: React.FC = observer(() => {
     const {konanim} = store;
     const [addDialogOpen, setAddDialogOpen] = useState(false);
+    const [editDialogOpen, setEditDialogOpen] = useState(false);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [selectedEmployee, setSelectedEmployee] = useState<Employee | undefined>(undefined);
+    const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
 
     const onDrop = (e: React.DragEvent) => {
         e.preventDefault();
@@ -30,6 +36,40 @@ const EmployeeList: React.FC = observer(() => {
         e.dataTransfer.setData('application/json', JSON.stringify({employeeId, fromShiftId: null}));
     };
 
+    const handleContextMenu = (event: React.MouseEvent<HTMLDivElement>, employee: any) => {
+        event.preventDefault();
+        setSelectedEmployee(employee);
+        setMenuAnchor(event.currentTarget);
+    };
+
+    const handleEditDialogOpen = () => {
+        setEditDialogOpen(true);
+    };
+
+    const handleDeleteDialogOpen = () => {
+        setDeleteDialogOpen(true);
+    };
+
+    const handleDeleteDialogClose = () => {
+        setDeleteDialogOpen(false);
+        setSelectedEmployee(undefined);
+    };
+
+    const handleEditDialogClose = () => {
+        setEditDialogOpen(false);
+        setSelectedEmployee(undefined);
+    };
+
+    const handleConfirmDelete = () => {
+        // Implement delete logic here
+        handleDeleteDialogClose();
+    };
+
+    const handleConfirmEdit = () => {
+        // Implement edit logic here
+        handleEditDialogClose();
+    };
+
     return (
         <Paper sx={{mt: 4, p: 2, borderRadius: 2, background: '#2c2c30'}}
                onDrop={onDrop}
@@ -47,6 +87,7 @@ const EmployeeList: React.FC = observer(() => {
                         key={konan.id}
                         draggable
                         onDragStart={e => onDragStart(e, konan.id)}
+                        onContextMenu={e => handleContextMenu(e, konan)}
                         sx={{
                             background: '#61dafb',
                             color: '#23272f',
@@ -71,7 +112,20 @@ const EmployeeList: React.FC = observer(() => {
                     </Box>
                 ))}
             </Box>
-            <AddEmployeeDialog open={addDialogOpen} onClose={() => setAddDialogOpen(false)}/>
+            <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={() => setMenuAnchor(null)}>
+                <MenuItem onClick={handleEditDialogOpen}>ערוך</MenuItem>
+                <MenuItem onClick={handleDeleteDialogOpen}>מחק</MenuItem>
+            </Menu>
+            <EditKonan open={editDialogOpen}
+                       handleDialogClose={handleEditDialogClose}
+                       handleConfirm={handleConfirmEdit}
+                       employee={selectedEmployee} />
+            <DeleteKonan
+                open={deleteDialogOpen}
+                handleDialogClose={handleDeleteDialogClose}
+                handleConfirm={handleConfirmDelete}
+                selectedEmployee={selectedEmployee} />
+            <AddEmployeeDialog open={addDialogOpen} onClose={() => setAddDialogOpen(false)} />
         </Paper>
     );
 });

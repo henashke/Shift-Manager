@@ -107,7 +107,6 @@ export class ShiftStore {
 
 const store = new ShiftStore();
 export default store;
-
 // HTTP handlers for real server requests (not used for now)
 export async function httpGetEmployees() {
     const res = await fetch('http://localhost:8080/getEmployees');
@@ -120,3 +119,4 @@ export async function httpGetShifts(weekStartIso: string) {
     if (!res.ok) throw new Error('Failed to fetch shifts');
     return res.json();
 }
+

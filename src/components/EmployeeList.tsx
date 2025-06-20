@@ -5,6 +5,7 @@ import store, {Employee} from '../stores/ShiftStore';
 import AddEmployeeDialog from './AddEmployeeDialog';
 import DeleteKonan from "./dialogs/DeleteKonan";
 import EditKonan from "./dialogs/EditKonan";
+import EmployeeInfoDialog from "./EmployeeInfoDialog";
 
 const EmployeeList: React.FC = observer(() => {
     const {konanim} = store;
@@ -13,6 +14,7 @@ const EmployeeList: React.FC = observer(() => {
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [selectedEmployee, setSelectedEmployee] = useState<Employee | undefined>(undefined);
     const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
+    const [infoDialogOpen, setInfoDialogOpen] = useState(false);
 
     const onDrop = (e: React.DragEvent) => {
         e.preventDefault();
@@ -71,12 +73,12 @@ const EmployeeList: React.FC = observer(() => {
     };
 
     return (
-        <Paper sx={{mt: 4, p: 2, borderRadius: 2, background: '#2c2c30'}}
+        <Paper sx={{mt: 4, p: 2, borderRadius: 2}}
                onDrop={onDrop}
                onDragOver={onDragOver}
         >
             <Box sx={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                <Typography variant="h6" sx={{color: '#61dafb', mb: 2, fontWeight: 700}}>כוננים</Typography>
+                {/*<Typography variant="h6" color="primary" sx={{ mb: 2, fontWeight: 700}}>כוננים</Typography>*/}
                 <Button variant="contained" color="primary" onClick={() => setAddDialogOpen(true)}>
                     הוסף כונן
                 </Button>
@@ -89,8 +91,8 @@ const EmployeeList: React.FC = observer(() => {
                         onDragStart={e => onDragStart(e, konan.id)}
                         onContextMenu={e => handleContextMenu(e, konan)}
                         sx={{
-                            background: '#61dafb',
-                            color: '#23272f',
+                            background: theme => theme.palette.primary.main,
+                            color: 'common.white',
                             px: 3,
                             py: 1.5,
                             borderRadius: 2,
@@ -98,13 +100,18 @@ const EmployeeList: React.FC = observer(() => {
                             fontSize: '1.08em',
                             cursor: 'grab',
                             boxShadow: 2,
-                            border: '2px solid #61dafb44',
                             userSelect: 'none',
+                            transition: 'box-shadow 0.2s, transform 0.2s',
                             '&:active': {
-                                background: '#21a1f3',
-                                color: '#fff',
+                                background: theme => theme.palette.primary.dark,
+                                color: 'common.white',
                                 boxShadow: 4,
                                 transform: 'scale(0.97)',
+                            },
+                            '&:hover': {
+                                boxShadow: 6,
+                                transform: 'scale(1.04)',
+                                cursor: 'pointer',
                             },
                         }}
                     >
@@ -126,6 +133,7 @@ const EmployeeList: React.FC = observer(() => {
                 handleConfirm={handleConfirmDelete}
                 selectedEmployee={selectedEmployee} />
             <AddEmployeeDialog open={addDialogOpen} onClose={() => setAddDialogOpen(false)} />
+            <EmployeeInfoDialog open={infoDialogOpen} employee={selectedEmployee} onClose={() => setInfoDialogOpen(false)} />
         </Paper>
     );
 });

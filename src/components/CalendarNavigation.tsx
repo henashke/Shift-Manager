@@ -14,7 +14,7 @@ const CalendarNavigation: React.FC = observer(() => {
   return (
     <Box display="flex" alignItems="center" justifyContent="center" gap={2} mb={3}>
       <Button variant="outlined" onClick={handlePrevWeekClick}>{'<'}</Button>
-      <Typography variant="h6" sx={{ px: 2, background: '#23272f', borderRadius: 2, color: '#fff' }}>
+      <Typography variant="h6" sx={{ px: 2, borderRadius: 2 }}>
         {formatDate(weekDates[0])}
         {' - '}
         {formatDate(weekDates[6])}

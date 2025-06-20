@@ -96,7 +96,7 @@ const ShiftTable: React.FC = observer(() => {
         <TableBody>
           {shiftTypes.map(shiftType => (
             <TableRow key={shiftType}>
-              <TableCell sx={{ color: '#fff', fontWeight: 600 }}>{shiftType}</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>{shiftType}</TableCell>
               {weekDates.map((date) => {
                 const shift = shifts.find(s => s.date === date.toISOString() && s.type === shiftType);
                 const employee = konanim.find(e => e.id === shift?.employeeId);
@@ -108,18 +108,18 @@ const ShiftTable: React.FC = observer(() => {
                     onDragOver={onDragOver}
                     onClick={() => shift && handleCellClick(shift.id)}
                     onContextMenu={e => shift && handleContextMenu(e, shift.id)}
-                    sx={{ minHeight: 48, borderRadius: 2, background: '#282c34', color: '#fff', cursor: 'pointer' }}
+                    sx={{ minHeight: 48, borderRadius: 2, color: 'common.white', cursor: 'pointer' }}
                   >
                     {employee ? (
                       <Box
-                        sx={{ background: '#61dafb', color: '#23272f', borderRadius: 1, px: 1, py: 0.5, fontWeight: 700 }}
+                        sx={{ background: theme => theme.palette.primary.main, color: 'common.white', borderRadius: 1, px: 1, py: 0.5, fontWeight: 700 }}
                         draggable
                         onDragStart={e => onDragStart(e, employee.id, shift?.id)}
                       >
                         {employee.name}
                       </Box>
                     ) : (
-                      <Typography variant="caption" sx={{ color: '#61dafb99' }}>כונן משובץ</Typography>
+                      <Typography variant="caption" sx={{ color: '#7d7bf2' }}>כונן משובץ</Typography>
                     )}
                   </TableCell>
                 );

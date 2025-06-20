@@ -7,6 +7,7 @@ const CalendarNavigation: React.FC = observer(() => {
   const weekDates = store.weekDates;
   const handlePrevWeekClick = () => store.setWeekOffset(store.weekOffset - 1);
   const handleNextWeekClick = () => store.setWeekOffset(store.weekOffset + 1);
+  const handleTodayClick = () => store.setWeekOffset(0);
 
   const formatDate = (date: Date) =>
     date.toLocaleDateString('he-IL', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -20,6 +21,9 @@ const CalendarNavigation: React.FC = observer(() => {
         {formatDate(weekDates[6])}
       </Typography>
       <Button variant="outlined" onClick={handleNextWeekClick}>{'>'}</Button>
+      <Button variant="contained" color="primary" onClick={handleTodayClick} sx={{ml: 2}}>
+        לשבוע הנוכחי
+      </Button>
     </Box>
   );
 });

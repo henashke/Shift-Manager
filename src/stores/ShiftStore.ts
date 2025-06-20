@@ -1,6 +1,6 @@
 import {makeAutoObservable, runInAction} from 'mobx';
 
-export interface Employee {
+export interface Konan {
     id: string;
     name: string;
     score: number;
@@ -14,18 +14,16 @@ export interface Shift {
     day: Day;
     date: string;
     type: ShiftType;
-    employeeId?: string;
+    konanId?: string;
 }
 
 export class ShiftStore {
-    konanim: Employee[] = [];
     shifts: Shift[] = [];
     weekOffset = 0;
     loading = false;
 
     constructor() {
         makeAutoObservable(this);
-        this.fetchEmployees();
         this.fetchShifts();
     }
 
@@ -39,22 +37,6 @@ export class ShiftStore {
             d.setDate(start.getDate() + i);
             return d;
         });
-    }
-
-    fetchEmployees = () => {
-        this.loading = true;
-        setTimeout(() => {
-            runInAction(() => {
-                this.konanim = [
-                    {id: '1', name: 'חן אשכנזי', score: 0},
-                    {id: '2', name: 'דור סהר', score: 0},
-                    {id: '3', name: 'רפאל ברדוגו', score: 0},
-                    {id: '4', name: 'אופק באר', score: 0},
-                    {id: '5', name: 'ליאור קוזברג', score: 0},
-                ];
-                this.loading = false;
-            });
-        }, 500);
     }
 
     fetchShifts = () => {
@@ -78,26 +60,26 @@ export class ShiftStore {
                 this.loading = false;
             });
         }, 500);
-    }
+    };
 
-    assignEmployee = (shiftId: string, employeeId: string) => {
+    assignKonan = (shiftId: string, konanId: string) => {
         const shift = this.shifts.find(s => s.id === shiftId);
         if (shift) {
-            shift.employeeId = employeeId;
+            shift.konanId = konanId;
         }
-    }
+    };
 
-    unassignEmployee = (shiftId: string) => {
+    unassignKonan = (shiftId: string) => {
         const shift = this.shifts.find(s => s.id === shiftId);
         if (shift) {
-            shift.employeeId = undefined;
+            shift.konanId = undefined;
         }
-    }
+    };
 
-    addEmployee = (name: string) => {
-        const id = (Math.max(0, ...this.konanim.map(e => +e.id)) + 1).toString();
-        this.konanim.push({id, name, score: 0});
-    }
+    addKonan = (name: string) => {
+        // Use konanimStore to add konanim instead
+        // This method can be removed or refactored if not needed
+    };
 
     setWeekOffset = (offset: number) => {
         this.weekOffset = offset;
@@ -108,9 +90,9 @@ export class ShiftStore {
 const store = new ShiftStore();
 export default store;
 // HTTP handlers for real server requests (not used for now)
-export async function httpGetEmployees() {
-    const res = await fetch('http://localhost:8080/getEmployees');
-    if (!res.ok) throw new Error('Failed to fetch employees');
+export async function httpGetKonanim() {
+    const res = await fetch('http://localhost:8080/getKonanim');
+    if (!res.ok) throw new Error('Failed to fetch konanim');
     return res.json();
 }
 
@@ -119,4 +101,3 @@ export async function httpGetShifts(weekStartIso: string) {
     if (!res.ok) throw new Error('Failed to fetch shifts');
     return res.json();
 }
-

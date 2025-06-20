@@ -1,18 +1,19 @@
 import React, {useState} from 'react';
 import {observer} from 'mobx-react-lite';
-import {Box, Button, Menu, MenuItem, Paper, Typography} from '@mui/material';
-import store, {Employee} from '../stores/ShiftStore';
-import AddEmployeeDialog from './AddEmployeeDialog';
+import {Box, Button, Menu, MenuItem, Paper} from '@mui/material';
+import konanimStore from '../stores/KonanimStore';
+import shiftStore, { Konan } from '../stores/ShiftStore';
+import AddKonanDialog from './AddKonanDialog';
 import DeleteKonan from "./dialogs/DeleteKonan";
 import EditKonan from "./dialogs/EditKonan";
-import EmployeeInfoDialog from "./EmployeeInfoDialog";
+import KonanInfoDialog from "./KonanInfoDialog";
 
-const EmployeeList: React.FC = observer(() => {
-    const {konanim} = store;
+const KonanList: React.FC = observer(() => {
+    const {konanim} = konanimStore;
     const [addDialogOpen, setAddDialogOpen] = useState(false);
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-    const [selectedEmployee, setSelectedEmployee] = useState<Employee | undefined>(undefined);
+    const [selectedKonan, setSelectedKonan] = useState<Konan | undefined>(undefined);
     const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
     const [infoDialogOpen, setInfoDialogOpen] = useState(false);
 
@@ -23,7 +24,7 @@ const EmployeeList: React.FC = observer(() => {
         try {
             const {fromShiftId} = JSON.parse(data);
             if (fromShiftId) {
-                store.unassignEmployee(fromShiftId);
+                shiftStore.unassignKonan(fromShiftId);
             }
         } catch {
             // fallback: do nothing
@@ -34,18 +35,22 @@ const EmployeeList: React.FC = observer(() => {
         e.preventDefault();
     };
 
-    const onDragStart = (e: React.DragEvent, employeeId: string) => {
-        e.dataTransfer.setData('application/json', JSON.stringify({employeeId, fromShiftId: null}));
+    const onDragStart = (e: React.DragEvent, konanId: string) => {
+        e.dataTransfer.setData('application/json', JSON.stringify({konanId, fromShiftId: null}));
     };
 
-    const handleContextMenu = (event: React.MouseEvent<HTMLDivElement>, employee: any) => {
+    const handleContextMenu = (event: React.MouseEvent<HTMLDivElement>, konan: any) => {
         event.preventDefault();
-        setSelectedEmployee(employee);
+        setSelectedKonan(konan);
         setMenuAnchor(event.currentTarget);
     };
 
     const handleEditDialogOpen = () => {
         setEditDialogOpen(true);
+    };
+
+    const handleInfoDialogOpen = () => {
+        setInfoDialogOpen(true);
     };
 
     const handleDeleteDialogOpen = () => {
@@ -54,12 +59,12 @@ const EmployeeList: React.FC = observer(() => {
 
     const handleDeleteDialogClose = () => {
         setDeleteDialogOpen(false);
-        setSelectedEmployee(undefined);
+        setSelectedKonan(undefined);
     };
 
     const handleEditDialogClose = () => {
         setEditDialogOpen(false);
-        setSelectedEmployee(undefined);
+        setSelectedKonan(undefined);
     };
 
     const handleConfirmDelete = () => {
@@ -120,22 +125,23 @@ const EmployeeList: React.FC = observer(() => {
                 ))}
             </Box>
             <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={() => setMenuAnchor(null)}>
+                <MenuItem onClick={handleInfoDialogOpen}>פרטי כונן</MenuItem>
                 <MenuItem onClick={handleEditDialogOpen}>ערוך</MenuItem>
                 <MenuItem onClick={handleDeleteDialogOpen}>מחק</MenuItem>
             </Menu>
             <EditKonan open={editDialogOpen}
                        handleDialogClose={handleEditDialogClose}
                        handleConfirm={handleConfirmEdit}
-                       employee={selectedEmployee} />
+                       konan={selectedKonan} />
             <DeleteKonan
                 open={deleteDialogOpen}
                 handleDialogClose={handleDeleteDialogClose}
                 handleConfirm={handleConfirmDelete}
-                selectedEmployee={selectedEmployee} />
-            <AddEmployeeDialog open={addDialogOpen} onClose={() => setAddDialogOpen(false)} />
-            <EmployeeInfoDialog open={infoDialogOpen} employee={selectedEmployee} onClose={() => setInfoDialogOpen(false)} />
+                selectedKonan={selectedKonan} />
+            <AddKonanDialog open={addDialogOpen} onClose={() => setAddDialogOpen(false)} />
+            <KonanInfoDialog open={infoDialogOpen} konan={selectedKonan} onClose={() => setInfoDialogOpen(false)} />
         </Paper>
     );
 });
 
-export default EmployeeList;
+export default KonanList;

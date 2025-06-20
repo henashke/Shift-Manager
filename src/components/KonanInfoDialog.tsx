@@ -1,17 +1,17 @@
 import React from 'react';
 import { Dialog, DialogTitle, DialogContent, Typography, Box, Avatar, useTheme, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import { Employee } from '../stores/ShiftStore';
+import { Konan } from '../stores/ShiftStore';
 
-interface EmployeeInfoDialogProps {
+interface KonanInfoDialogProps {
   open: boolean;
-  employee: Employee | undefined;
+  konan: Konan | undefined;
   onClose: () => void;
 }
 
-const EmployeeInfoDialog: React.FC<EmployeeInfoDialogProps> = ({ open, employee, onClose }) => {
+const KonanInfoDialog: React.FC<KonanInfoDialogProps> = ({ open, konan, onClose }) => {
   const theme = useTheme();
-  if (!employee) return null;
+  if (!konan) return null;
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
@@ -23,17 +23,17 @@ const EmployeeInfoDialog: React.FC<EmployeeInfoDialogProps> = ({ open, employee,
       </DialogTitle>
       <DialogContent sx={{ p: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', bgcolor: theme.palette.background.default }}>
         <Avatar sx={{ width: 72, height: 72, bgcolor: theme.palette.primary.main, mb: 2, fontSize: 32 }}>
-          {employee.name[0]}
+          {konan.name[0]}
         </Avatar>
         <Typography variant="h6" fontWeight={700} gutterBottom>
-          {employee.name}
+          {konan.name}
         </Typography>
         <Box sx={{ width: '100%', mt: 2 }}>
           <Typography variant="subtitle1" color="text.secondary">
-            מזהה: <b>{employee.id}</b>
+            מזהה: <b>{konan.id}</b>
           </Typography>
           <Typography variant="subtitle1" color="text.secondary">
-            ניקוד: <b>{employee.score}</b>
+            ניקוד: <b>{konan.score}</b>
           </Typography>
         </Box>
       </DialogContent>
@@ -41,5 +41,4 @@ const EmployeeInfoDialog: React.FC<EmployeeInfoDialogProps> = ({ open, employee,
   );
 };
 
-export default EmployeeInfoDialog;
-
+export default KonanInfoDialog;

@@ -22,7 +22,7 @@ const AssignKonanDialog: React.FC<AssignKonanDialogProps> = observer(({ open, on
 
   return (
     <Dialog open={open} onClose={onClose}>
-      <DialogTitle>Assign Konan to {shift.day} {shift.type}</DialogTitle>
+      <DialogTitle>שבץ כונן ל{shift.day} {shift.type}</DialogTitle>
       <DialogContent>
         <List>
           {konanimStore.konanim.map(konan => (

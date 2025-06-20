@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {Container, CssBaseline, IconButton, Typography, AppBar, Toolbar, Box, Menu, MenuItem, Tooltip} from '@mui/material';
+import {Container, CssBaseline, IconButton, Typography, AppBar, Toolbar, Box, Menu, MenuItem, Tooltip, Tabs, Tab} from '@mui/material';
 import {observer} from 'mobx-react-lite';
 import CalendarNavigation from './components/CalendarNavigation';
 import ShiftTable from './components/ShiftTable';
@@ -11,11 +11,16 @@ import { Routes, Route, useNavigate } from 'react-router-dom';
 import LoginSignup from './components/LoginSignup';
 import authStore from './stores/AuthStore';
 import LogoutDialog from './components/dialogs/LogoutDialog';
+import ConstraintList from './components/ConstraintList';
 
 const App: React.FC = observer(() => {
     const [darkMode, setDarkMode] = useState(true);
     const [logoutOpen, setLogoutOpen] = useState(false);
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+    const [tabValue, setTabValue] = useState(() => {
+        if (window.location.pathname.startsWith('/constraints')) return 1;
+        return 0;
+    });
     const menuOpen = Boolean(anchorEl);
     const navigate = useNavigate();
 
@@ -50,12 +55,18 @@ const App: React.FC = observer(() => {
         },
     });
 
+    const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
+        setTabValue(newValue);
+        if (newValue === 0) navigate('/');
+        if (newValue === 1) navigate('/constraints');
+    };
+
     return (
         <ThemeProvider theme={theme}>
             <CssBaseline/>
             <AppBar position="static" color="primary" sx={{mb: 4}}>
                 <Toolbar sx={{justifyContent: 'space-between'}}>
-                    <Box sx={{display: 'flex', alignItems: 'center'}}>
+                    <Box sx={{display: 'flex', alignItems: 'center', flex: 1}}>
                         <Typography variant="h5" fontWeight={800} color="inherit" sx={{textShadow: '0 2px 16px #222a, 0 1px 0 #2228'}}>
                             כוננים
                         </Typography>
@@ -67,6 +78,12 @@ const App: React.FC = observer(() => {
                         >
                             {darkMode ? <LightMode sx={{color: '#ffe066'}}/> : <DarkMode sx={{color: '#23272f'}}/>}
                         </IconButton>
+                        <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+                            <Tabs value={tabValue} onChange={handleTabChange} textColor="inherit" indicatorColor="secondary">
+                                <Tab label="שיבוצים" />
+                                <Tab label="אילוצים" />
+                            </Tabs>
+                        </Box>
                     </Box>
                     {!authStore.username && (
                         <IconButton aria-label="login" color="inherit" onClick={() => navigate('/login')}>
@@ -116,6 +133,7 @@ const App: React.FC = observer(() => {
             </AppBar>
             <Routes>
                 <Route path="/login" element={<LoginSignup />} />
+                <Route path="/constraints" element={<Container maxWidth="md" dir="rtl"><ConstraintList /></Container>} />
                 <Route path="/" element={
                     <Container maxWidth="lg" dir="rtl">
                         <CalendarNavigation/>

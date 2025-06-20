@@ -177,14 +177,14 @@ const ShiftTable: React.FC = observer(() => {
                     <ListItemIcon>
                         <PersonAddIcon fontSize="small"/>
                     </ListItemIcon>
-                    <ListItemText>Assign Konan</ListItemText>
+                    <ListItemText>שבץ כונן</ListItemText>
                 </MenuItem>
                 <MenuItem onClick={handleRemoveKonan}
                           disabled={!contextMenu?.shiftId || !shifts.find(s => s.id === contextMenu.shiftId)?.konanId}>
                     <ListItemIcon>
                         <PersonRemoveIcon fontSize="small"/>
                     </ListItemIcon>
-                    <ListItemText>Remove Konan</ListItemText>
+                    <ListItemText>הסר כונן משובץ</ListItemText>
                 </MenuItem>
             </Menu>
         </TableContainer>

@@ -113,7 +113,7 @@ h1 {
   opacity: 0.7;
 }
 
-.employee-list {
+.konan-list {
   margin-top: 32px;
   width: 100%;
   max-width: 800px;
@@ -123,7 +123,7 @@ h1 {
   padding: 24px 0 18px 0;
 }
 
-.employee-list h2 {
+.konan-list h2 {
   color: #61dafb;
   font-size: 1.4rem;
   font-weight: 700;
@@ -131,14 +131,14 @@ h1 {
   letter-spacing: 1px;
 }
 
-.employees {
+.konanim {
   display: flex;
   gap: 18px;
   flex-wrap: wrap;
   justify-content: center;
 }
 
-.employee {
+.konan {
   background: linear-gradient(135deg, #61dafb 60%, #21a1f3 100%);
   color: #23272f;
   padding: 12px 24px;
@@ -152,7 +152,7 @@ h1 {
   user-select: none;
 }
 
-.employee:active {
+.konan:active {
   background: linear-gradient(135deg, #21a1f3 60%, #61dafb 100%);
   color: #fff;
   box-shadow: 0 4px 16px #21a1f355;
@@ -221,7 +221,7 @@ h1 {
     min-width: 70px;
     font-size: 0.98em;
   }
-  .employee {
+  .konan {
     padding: 10px 12px;
     font-size: 0.98em;
   }

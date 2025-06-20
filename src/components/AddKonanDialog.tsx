@@ -3,17 +3,17 @@ import { observer } from 'mobx-react-lite';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField } from '@mui/material';
 import store from '../stores/ShiftStore';
 
-interface AddEmployeeDialogProps {
+interface AddKonanDialogProps {
   open: boolean;
   onClose: () => void;
 }
 
-const AddEmployeeDialog: React.FC<AddEmployeeDialogProps> = observer(({ open, onClose }) => {
+const AddKonanDialog: React.FC<AddKonanDialogProps> = observer(({ open, onClose }) => {
   const [name, setName] = useState('');
 
   const handleAdd = () => {
     if (name.trim()) {
-      store.addEmployee(name.trim());
+      store.addKonan(name.trim());
       setName('');
       onClose();
     }
@@ -21,12 +21,12 @@ const AddEmployeeDialog: React.FC<AddEmployeeDialogProps> = observer(({ open, on
 
   return (
     <Dialog open={open} onClose={onClose}>
-      <DialogTitle>Add Employee</DialogTitle>
+      <DialogTitle>Add Konan</DialogTitle>
       <DialogContent>
         <TextField
           autoFocus
           margin="dense"
-          label="Employee Name"
+          label="Konan Name"
           fullWidth
           value={name}
           onChange={e => setName(e.target.value)}
@@ -41,5 +41,5 @@ const AddEmployeeDialog: React.FC<AddEmployeeDialogProps> = observer(({ open, on
   );
 });
 
-export default AddEmployeeDialog;
+export default AddKonanDialog;
 

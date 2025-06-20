@@ -1,25 +1,23 @@
 import React from 'react';
 import CommonDialog, {CommonDialogProps} from "./CommonDialog";
-import {Employee} from "../../stores/ShiftStore";
+import {Konan} from "../../stores/ShiftStore";
 
 interface EditKonanProps extends Omit<CommonDialogProps, 'title' | 'content' | 'handleConfirm'> {
-    handleConfirm: (employee: Employee) => void;
-    employee?: Employee;
+    handleConfirm: (konan: Konan) => void;
+    konan?: Konan;
 }
 
 const EditKonan: React.FC<EditKonanProps> = ({
                                                      open,
                                                      handleDialogClose,
                                                      handleConfirm,
-                                                 employee
+                                                     konan
                                                  }) => (
     <CommonDialog open={open}
-                  title={"עריכת כונן" + employee?.name}
+                  title={"עריכת כונן" + konan?.name}
                   content={<>עריכת כונן (מימוש בהמשך)</>}
                   handleConfirm={handleConfirm}
                   handleDialogClose={handleDialogClose}/>
 );
 
 export default EditKonan;
-
-

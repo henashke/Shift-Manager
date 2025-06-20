@@ -1,9 +1,9 @@
 import React from 'react';
 import CommonDialog, {CommonDialogProps} from "./CommonDialog";
-import {Employee} from "../../stores/ShiftStore";
+import {Konan} from "../../stores/ShiftStore";
 
 interface DeleteKonanProps extends Omit<CommonDialogProps, 'title' | 'content' | 'handleConfirm'> {
-    selectedEmployee?: Employee;
+    selectedKonan?: Konan;
     handleConfirm: (konanToDeleteId: string) => void;
 }
 
@@ -11,15 +11,13 @@ const DeleteKonan: React.FC<DeleteKonanProps> = ({
                                                      open,
                                                      handleDialogClose,
                                                      handleConfirm,
-                                                     selectedEmployee
+                                                     selectedKonan
                                                  }) => (
     <CommonDialog open={open}
-                  title={"מחיקת " + (selectedEmployee ? selectedEmployee.name : '')}
-                  content={<>האם אתה בטוח שברצונך למחוק את {selectedEmployee?.name}?</>}
+                  title={"מחיקת " + (selectedKonan ? selectedKonan.name : '')}
+                  content={<>האם אתה בטוח שברצונך למחוק את {selectedKonan?.name}?</>}
                   handleConfirm={handleConfirm}
                   handleDialogClose={handleDialogClose}/>
 );
 
 export default DeleteKonan;
-
-

@@ -22,12 +22,11 @@ import AssignToShiftDialog from './AssignToShiftDialog';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import PersonRemoveIcon from '@mui/icons-material/PersonRemove';
 
-// Hebrew day and shift names
 const days = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 const shiftTypes = ['יום', 'לילה'] as const;
 
 interface ShiftTableProps<T> {
-    retreiveItemFromShift: (shift: Shift) => T | undefined;
+    retrieveItemFromShift: (shift: Shift) => T | undefined;
     getItemName: (item: T) => string;
     assignHandler: (shift: Shift, item: T) => void;
     itemList: T[];
@@ -35,7 +34,7 @@ interface ShiftTableProps<T> {
     onDragStartHandler?: (e: React.DragEvent, draggedElement: T, fromShift?: Shift) => void;
 }
 
-function ShiftTable<T>({ retreiveItemFromShift, getItemName, assignHandler, itemList, onDropHandler, onDragStartHandler }: ShiftTableProps<T>) {
+function ShiftTable<T>({ retrieveItemFromShift, getItemName, assignHandler, itemList, onDropHandler, onDragStartHandler }: ShiftTableProps<T>) {
     const {weekDates, assignedShifts} = store;
     const [assignDialogOpen, setAssignDialogOpen] = useState(false);
     const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
@@ -49,7 +48,6 @@ function ShiftTable<T>({ retreiveItemFromShift, getItemName, assignHandler, item
         konanimStore.fetchKonanim();
     }, []);
 
-    // Drag and drop handlers
     const onDrop = (e: React.DragEvent, shift: Shift) => {
         onDropHandler?.(e, shift);
     };
@@ -123,7 +121,7 @@ function ShiftTable<T>({ retreiveItemFromShift, getItemName, assignHandler, item
                             <TableCell sx={{fontWeight: 600}}>{shiftType}</TableCell>
                             {weekDates.map((date) => {
                                 const shift = {date: date, type: shiftType};
-                                const item = retreiveItemFromShift(shift);
+                                const item = retrieveItemFromShift(shift);
                                 return (
                                     <TableCell
                                         key={date.toISOString() + shiftType}

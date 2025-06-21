@@ -5,37 +5,62 @@ import DraggableList from './DraggableList';
 import {ConstraintType} from './ConstraintTypeList';
 import ShiftTable from './ShiftTable';
 import {Container} from "@mui/material";
-import {Shift, ShiftType} from '../stores/ShiftStore';
+import {sameShift, Shift} from '../stores/ShiftStore';
 import authStore from "../stores/AuthStore";
-import {Constraint, constraintStore} from "../stores/ConstraintStore";
+import {constraintStore} from "../stores/ConstraintStore";
+import {Konan} from "../stores/KonanimStore";
 
 const constraintTypes = [ConstraintType.CANT, ConstraintType.PREFERS_NOT, ConstraintType.PREFERS];
 
 const ConstraintTab: React.FC = observer(() => {
-    // Drag and drop handlers for constraint types
-    const onDragStart = (e: React.DragEvent, type: ConstraintType) => {
-        e.dataTransfer.setData('application/json', JSON.stringify({konanId: authStore.username, constraintType: type}));
+    const onDragStart = (e: React.DragEvent, type: ConstraintType, fromShift?: Shift) => {
+        e.dataTransfer.setData('application/json', JSON.stringify({
+            konanId: authStore.username,
+            constraintType: type,
+            fromShift: fromShift || null
+        }));
     };
 
-    const handleDrop = (e: React.DragEvent) => {
+    const handleShiftTableDrop = (e: React.DragEvent, shift: Shift) => {
         e.preventDefault();
         const data = e.dataTransfer.getData('application/json');
         if (!data) return;
         try {
-            const {konanId, constraintType, shift} = JSON.parse(data);
-            if (konanId && shift) {
+            const {konanId, constraintType, fromShift}: {
+                konanId: string,
+                constraintType: ConstraintType,
+                fromShift: Shift
+            } = JSON.parse(data);
+            if (konanId && !sameShift(fromShift, shift)) {
                 constraintStore.addConstraint({
                     konanId: konanId,
-                    date: shift.shiftDate,
-                    shiftType: shift.shiftType,
+                    date: shift.date,
+                    shiftType: shift.type,
                     constraintType: constraintType
                 });
             }
-        } catch {
-            // fallback: do nothing
+        } catch (error) {
+            console.error('Failed to parse data from drag event:', data, error);
         }
     };
-    // No-op for onDrop/onDragOver for now, can be extended for unassigning constraints
+
+    const handleDeleteAreaOnDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        const data = e.dataTransfer.getData('application/json');
+        if (!data) return;
+        try {
+            const {konanId, constraintType, fromShift}: {
+                konanId: string,
+                constraintType: ConstraintType,
+                fromShift: Shift
+            } = JSON.parse(data);
+            if (fromShift) {
+                constraintStore.removeConstraint(fromShift);
+            }
+        } catch(e) {
+            console.error('Failed to parse data from drag event:', data, e);
+        }
+    };
 
     const assignConstraint = (shift: Shift, constraintType: ConstraintType) => {
         constraintStore.addConstraint({
@@ -54,8 +79,8 @@ const ConstraintTab: React.FC = observer(() => {
         <Container maxWidth="lg" dir="rtl">
             <CalendarNavigation/>
             <ShiftTable itemList={constraintTypes}
-                        onDropHandler={handleDrop}
-                        retreiveItemFromShift={retreiveConstraintFromShift}
+                        onDropHandler={handleShiftTableDrop}
+                        retrieveItemFromShift={retreiveConstraintFromShift}
                         assignHandler={assignConstraint}
                         getItemName={(item: ConstraintType) => item.toString()}
                         onDragStartHandler={onDragStart}/>
@@ -64,7 +89,7 @@ const ConstraintTab: React.FC = observer(() => {
                 getKey={item => item}
                 getLabel={item => item}
                 onDragStart={onDragStart}
-                onDrop={handleDrop}/>
+                onDrop={handleDeleteAreaOnDrop}/>
         </Container>
     );
 });

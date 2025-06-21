@@ -1,11 +1,11 @@
 // You can expand this store with actions to add/remove constraints as needed
 import { makeAutoObservable } from 'mobx';
 import {ConstraintType} from "../components/ConstraintTypeList";
-import {ShiftType} from "./ShiftStore";
+import {sameShift, Shift, ShiftType} from "./ShiftStore";
 
 export type Constraint = {
   konanId: string;
-  date: Date; // ISO date string
+  date: Date;
   shiftType: ShiftType;
   constraintType: ConstraintType;
 };
@@ -21,8 +21,8 @@ class ConstraintStore {
     this.constraints.push(constraint);
   }
 
-  removeConstraint(index: number) {
-    this.constraints.splice(index, 1);
+  removeConstraint(shift: Shift) {
+    this.constraints = this.constraints.filter(c => !(sameShift({date: c.date, type: c.shiftType}, shift)));
   }
 }
 

@@ -13,23 +13,20 @@ const AssignmentTab: React.FC = () => {
 
 
     const onDragStart = (e: React.DragEvent, konan: Konan, fromShift?: Shift) => {
-        e.dataTransfer.setData('application/json', JSON.stringify({konanId: konan.id, fromShift: fromShift || null}));
+        e.dataTransfer.setData('application/json', JSON.stringify({konan: konan, fromShift: fromShift || null}));
     };
 
     const handleDrop = (e: React.DragEvent, shift: Shift) => {
         e.preventDefault();
         const data = e.dataTransfer.getData('application/json');
         if (!data) return;
-        console.log('Dropping data:', data);
         try {
-            const {konanId, fromShift} = JSON.parse(data);
-            console.log('Parsed drop data:', {konanId, fromShift});
-            if (konanId && !sameShift(fromShift, shift)) {
-                console.log('Assigning konan:', konanId, 'from shift:', fromShift, 'to shift:', shift);
-                assignKonan(shift, konanId);
+            const {konan, fromShift}: { konan: Konan, fromShift: Shift } = JSON.parse(data);
+            if (konan && !sameShift(fromShift, shift)) {
+                assignKonan(shift, konan.id);
             }
-        } catch {
-            // fallback: do nothing
+        } catch(e) {
+            console.error("Failed to parse data from drag event:", data, e);
         }
     };
 
@@ -43,7 +40,7 @@ const AssignmentTab: React.FC = () => {
             <ShiftTable onDropHandler={handleDrop}
                         onDragStartHandler={onDragStart}
                         assignHandler={(shift, konan) => assignKonan(shift, konan.id)}
-                        retreiveItemFromShift={getKonanFromShift}
+                        retrieveItemFromShift={getKonanFromShift}
                         getItemName={(konan: Konan) => (konan.name)}
                         itemList={konanim}/>
             <KonanList/>

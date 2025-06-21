@@ -7,7 +7,6 @@ interface DraggableListProps<T> {
   getLabel: (item: T) => string;
   onDragStart: (e: React.DragEvent, item: T) => void;
   onDrop?: (e: React.DragEvent) => void;
-  onDragOver?: (e: React.DragEvent) => void;
   contextMenuItems?: (item: T, close: () => void) => { label: string, onClick: () => void }[];
   renderAddButton?: () => React.ReactNode;
 }
@@ -18,7 +17,6 @@ function DraggableList<T>({
   getLabel,
   onDragStart,
   onDrop,
-  onDragOver,
   contextMenuItems,
   renderAddButton
 }: DraggableListProps<T>) {
@@ -32,6 +30,10 @@ function DraggableList<T>({
   };
 
   const closeMenu = () => setMenuAnchor(null);
+
+  const onDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
 
   return (
     <Paper sx={{mt: 4, p: 2, borderRadius: 2}}

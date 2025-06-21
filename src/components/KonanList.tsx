@@ -1,12 +1,13 @@
 import React, {useState} from 'react';
 import {observer} from 'mobx-react-lite';
 import konanimStore from '../stores/KonanimStore';
-import shiftStore, {Konan} from '../stores/ShiftStore';
+import shiftStore, {Konan, Shift} from '../stores/ShiftStore';
 import AddKonanDialog from './AddKonanDialog';
 import DeleteKonan from "./dialogs/DeleteKonan";
 import EditKonan from "./dialogs/EditKonan";
 import KonanInfoDialog from "./KonanInfoDialog";
 import DraggableList from './DraggableList';
+import {Button} from "@mui/material";
 
 const KonanList: React.FC = observer(() => {
     const {konanim} = konanimStore;
@@ -21,23 +22,16 @@ const KonanList: React.FC = observer(() => {
         const data = e.dataTransfer.getData('application/json');
         if (!data) return;
         try {
-            const {fromShift} = JSON.parse(data);
-            console.log('Drop data:', fromShift);
+            const {konan, fromShift}: { konan: Konan, fromShift: Shift } = JSON.parse(data);
             if (fromShift) {
                 shiftStore.unassignKonan(fromShift);
             }
-        } catch {
-            // fallback: do nothing
+        } catch (e) {
+            console.error("Error: " + e);
         }
     };
-
-    const onDragOver = (e: React.DragEvent) => {
-        e.preventDefault();
-    };
-
-    const onDragStart = (e: React.DragEvent, konan: Konan) => {
-        console.log('Dragging konan:', konan);
-        e.dataTransfer.setData('application/json', JSON.stringify({konanId: konan.id, fromShift: null}));
+    const onDragStart = (e: React.DragEvent, konan: Konan, fromShift?: Shift) => {
+        e.dataTransfer.setData('application/json', JSON.stringify({konan: konan, fromShift: fromShift || null}));
     };
     const handleEditDialogOpen = (konan: Konan) => {
         setSelectedKonan(konan);
@@ -45,7 +39,6 @@ const KonanList: React.FC = observer(() => {
     };
 
     const handleInfoDialogOpen = (konan: Konan) => {
-        console.log('Opening info dialog for:', konan);
         setSelectedKonan(konan);
         setInfoDialogOpen(true);
     };
@@ -80,30 +73,32 @@ const KonanList: React.FC = observer(() => {
                 getKey={k => k.id}
                 getLabel={k => k.name}
                 onDragStart={onDragStart}
-                onDrop={onDrop}
-                onDragOver={onDragOver}
+                // onDrop={onDrop}
+                onDrop={e => {
+                    onDrop(e)
+                }}
                 contextMenuItems={(konan, close) => [
                     {label: 'פרטי כונן', onClick: () => handleInfoDialogOpen(konan)},
                     {label: 'ערוך', onClick: () => handleEditDialogOpen(konan)},
                     {label: 'מחק', onClick: () => handleDeleteDialogOpen(konan)},
                 ]}
-                // renderAddButton={() => (
-                //     <Button variant="contained" color="primary" onClick={() => setAddDialogOpen(true)}>
-                //         הוסף כונן
-                //     </Button>
-                // )}
+                renderAddButton={() => (
+                    <Button variant="contained" color="primary" onClick={() => setAddDialogOpen(true)}>
+                        הוסף כונן
+                    </Button>
+                )}
             />
             <EditKonan open={editDialogOpen}
                        handleDialogClose={handleEditDialogClose}
                        handleConfirm={handleConfirmEdit}
-                       konan={selectedKonan} />
+                       konan={selectedKonan}/>
             <DeleteKonan
                 open={deleteDialogOpen}
                 handleDialogClose={handleDeleteDialogClose}
                 handleConfirm={handleConfirmDelete}
-                selectedKonan={selectedKonan} />
-            <AddKonanDialog open={addDialogOpen} onClose={() => setAddDialogOpen(false)} />
-            <KonanInfoDialog open={infoDialogOpen} konan={selectedKonan} onClose={() => setInfoDialogOpen(false)} />
+                selectedKonan={selectedKonan}/>
+            <AddKonanDialog open={addDialogOpen} onClose={() => setAddDialogOpen(false)}/>
+            <KonanInfoDialog open={infoDialogOpen} konan={selectedKonan} onClose={() => setInfoDialogOpen(false)}/>
         </>
     );
 });

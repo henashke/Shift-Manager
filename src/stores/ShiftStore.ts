@@ -1,5 +1,4 @@
 import {makeAutoObservable, runInAction} from 'mobx';
-import {assign} from "mobx/dist/utils/utils";
 
 export interface Konan {
     id: string;
@@ -33,7 +32,7 @@ export class ShiftStore {
         const today = new Date();
         const start = new Date(today);
         start.setDate(today.getDate() - today.getDay() + this.weekOffset * 7);
-        start.setHours(0, 0, 0, 0);
+        start.setHours(10);
         return Array.from({length: 7}, (_, i) => {
             const d = new Date(start);
             d.setDate(start.getDate() + i);
@@ -72,7 +71,6 @@ export class ShiftStore {
             ...shift,
             konanId: konanId,
         };
-        console.log('Assigning new shift:', newShift);
         this.assignedShifts.push(newShift);
     };
 
@@ -113,10 +111,12 @@ export async function httpGetShifts(weekStartIso: string) {
 
 export const sameShift = (shift1: Shift, shift2: Shift) => {
     if (!shift1 || !shift2) return false;
+    const date1 = new Date(shift1.date);
+    const date2 = new Date(shift2.date);
     return (
-        shift1.date.getFullYear() === shift2.date.getFullYear() &&
-        shift1.date.getMonth() === shift2.date.getMonth() &&
-        shift1.date.getDate() === shift2.date.getDate() &&
+        date1.getFullYear() === date2.getFullYear() &&
+        date1.getMonth() === date2.getMonth() &&
+        date1.getDate() === date2.getDate() &&
         shift1.type === shift2.type
     );
 }

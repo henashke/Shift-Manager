@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {observer} from 'mobx-react-lite';
 import CalendarNavigation from './CalendarNavigation';
 import DraggableList from './DraggableList';
@@ -12,12 +12,23 @@ import {constraintStore} from "../stores/ConstraintStore";
 const constraintTypes = [ConstraintType.CANT, ConstraintType.PREFERS_NOT, ConstraintType.PREFERS];
 
 const ConstraintTab: React.FC = observer(() => {
-    const onDragStart = (e: React.DragEvent, type: ConstraintType, fromShift?: Shift) => {
+    const [isDragged, setIsDragged] = useState(false);
+
+    const onAssignedConstraintDragStart = (e: React.DragEvent, type: ConstraintType, fromShift?: Shift) => {
+        setIsDragged(true);
+        setDragData(e, type, fromShift);
+    };
+
+    const setDragData = (e: React.DragEvent, type: ConstraintType, fromShift?: Shift) => {
         e.dataTransfer.setData('application/json', JSON.stringify({
             konanId: authStore.username,
             constraintType: type,
             fromShift: fromShift || null
         }));
+    }
+
+    const onDragEnd = () => {
+        setIsDragged(false);
     };
 
     const handleShiftTableDrop = (e: React.DragEvent, shift: Shift) => {
@@ -82,14 +93,17 @@ const ConstraintTab: React.FC = observer(() => {
                         retrieveItemFromShift={retreiveConstraintFromShift}
                         assignHandler={assignConstraint}
                         getItemName={(item: ConstraintType) => item.toString()}
-                        onDragStartHandler={onDragStart}
+                        onDragStartHandler={onAssignedConstraintDragStart}
+                        onDragEndHandler={onDragEnd}
                         onDropHandler={handleShiftTableDrop}/>
             <DraggableList
                 items={constraintTypes}
                 getKey={item => item}
                 getLabel={item => item}
-                onDragStart={onDragStart}
-                onDrop={handleDeleteAreaOnDrop}/>
+                onDragStart={setDragData}
+                onDrop={handleDeleteAreaOnDrop}
+                isDragged={isDragged}
+            />
         </Container>
     );
 });

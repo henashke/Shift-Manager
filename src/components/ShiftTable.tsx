@@ -32,10 +32,11 @@ interface ShiftTableProps<T> {
     assignHandler: (shift: Shift, item: T) => void;
     itemList: T[];
     onDropHandler?: (e: React.DragEvent, shift: Shift) => void;
+    onDragEndHandler?: () => void;
     onDragStartHandler?: (e: React.DragEvent, draggedElement: T, fromShift?: Shift) => void;
 }
 
-function ShiftTable<T>({ retrieveItemFromShift, getItemName, assignHandler, itemList, onDropHandler, onDragStartHandler }: ShiftTableProps<T>) {
+function ShiftTable<T>({ retrieveItemFromShift, getItemName, assignHandler, itemList, onDropHandler, onDragStartHandler, onDragEndHandler }: ShiftTableProps<T>) {
     const {weekDates, assignedShifts} = store;
     const [assignDialogOpen, setAssignDialogOpen] = useState(false);
     const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
@@ -147,6 +148,7 @@ function ShiftTable<T>({ retrieveItemFromShift, getItemName, assignHandler, item
                                                 }}
                                                 draggable
                                                 onDragStart={e => onDragStart(e, item, shift)}
+                                                onDragEnd={onDragEndHandler}
                                             >
                                                 {getItemName(item)}
                                             </Box>

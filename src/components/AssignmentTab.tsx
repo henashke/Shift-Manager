@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import CalendarNavigation from './CalendarNavigation';
 import ShiftTable from './ShiftTable';
 import KonanList from './KonanList';
@@ -10,10 +10,17 @@ import konanimStore from "../stores/KonanimStore";
 const AssignmentTab: React.FC = () => {
     const {assignKonan} = store;
     const {konanim} = konanimStore;
+    const [isDragged, setIsDragged] = useState(false);
 
 
     const onDragStart = (e: React.DragEvent, konan: Konan, fromShift?: Shift) => {
+        setIsDragged(true);
         e.dataTransfer.setData('application/json', JSON.stringify({konan: konan, fromShift: fromShift || null}));
+    };
+
+    const onDragEnd = () => {
+        console.log("Drag ended");
+        setIsDragged(false);
     };
 
     const handleDrop = (e: React.DragEvent, shift: Shift) => {
@@ -39,11 +46,12 @@ const AssignmentTab: React.FC = () => {
             <CalendarNavigation/>
             <ShiftTable onDropHandler={handleDrop}
                         onDragStartHandler={onDragStart}
+                        onDragEndHandler={onDragEnd}
                         assignHandler={(shift, konan) => assignKonan(shift, konan.id)}
                         retrieveItemFromShift={getKonanFromShift}
                         getItemName={(konan: Konan) => (konan.name)}
                         itemList={konanim}/>
-            <KonanList/>
+            <KonanList isDragged={isDragged}/>
         </Container>
     );
 };

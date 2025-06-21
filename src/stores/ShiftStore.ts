@@ -79,6 +79,7 @@ export class ShiftStore {
     };
 
     addKonan = (name: string) => {
+        console.log(`Adding konan with name: ${name}`);
         // Use konanimStore to add konanim instead
         // This method can be removed or refactored if not needed
     };
@@ -96,7 +97,6 @@ export class ShiftStore {
 const store = new ShiftStore();
 export default store;
 
-// HTTP handlers for real server requests (not used for now)
 export async function httpGetKonanim() {
     const res = await fetch('http://localhost:8080/getKonanim');
     if (!res.ok) throw new Error('Failed to fetch konanim');

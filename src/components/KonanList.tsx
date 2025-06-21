@@ -9,7 +9,7 @@ import KonanInfoDialog from "./KonanInfoDialog";
 import DraggableList from './DraggableList';
 import {Button} from "@mui/material";
 
-const KonanList: React.FC = observer(() => {
+const KonanList: React.FC<{ isDragged?: boolean }> = observer(({ isDragged }) => {
     const {konanim} = konanimStore;
     const [addDialogOpen, setAddDialogOpen] = useState(false);
     const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -66,6 +66,8 @@ const KonanList: React.FC = observer(() => {
         handleEditDialogClose();
     };
 
+    console.log("isDragged: ", isDragged);
+
     return (
         <>
             <DraggableList
@@ -73,15 +75,13 @@ const KonanList: React.FC = observer(() => {
                 getKey={k => k.id}
                 getLabel={k => k.name}
                 onDragStart={onDragStart}
-                // onDrop={onDrop}
-                onDrop={e => {
-                    deleteAreaOnDropHandler(e)
-                }}
+                onDrop={deleteAreaOnDropHandler}
                 contextMenuItems={(konan) => [
                     {label: 'פרטי כונן', onClick: () => handleInfoDialogOpen(konan)},
                     {label: 'ערוך', onClick: () => handleEditDialogOpen(konan)},
                     {label: 'מחק', onClick: () => handleDeleteDialogOpen(konan)},
                 ]}
+                isDragged={isDragged}
                 renderAddButton={() => (
                     <Button variant="contained" color="primary" onClick={() => setAddDialogOpen(true)}>
                         הוסף כונן

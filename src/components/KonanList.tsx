@@ -1,6 +1,5 @@
 import React, {useState} from 'react';
 import {observer} from 'mobx-react-lite';
-import {Box, Button, Paper} from '@mui/material';
 import konanimStore from '../stores/KonanimStore';
 import shiftStore, {Konan} from '../stores/ShiftStore';
 import AddKonanDialog from './AddKonanDialog';
@@ -15,7 +14,6 @@ const KonanList: React.FC = observer(() => {
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [selectedKonan, setSelectedKonan] = useState<Konan | undefined>(undefined);
-    const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
     const [infoDialogOpen, setInfoDialogOpen] = useState(false);
 
     const onDrop = (e: React.DragEvent) => {
@@ -23,10 +21,10 @@ const KonanList: React.FC = observer(() => {
         const data = e.dataTransfer.getData('application/json');
         if (!data) return;
         try {
-            const {fromShiftId} = JSON.parse(data);
-            console.log('Drop data:', fromShiftId);
-            if (fromShiftId) {
-                shiftStore.unassignKonan(fromShiftId);
+            const {fromShift} = JSON.parse(data);
+            console.log('Drop data:', fromShift);
+            if (fromShift) {
+                shiftStore.unassignKonan(fromShift);
             }
         } catch {
             // fallback: do nothing
@@ -38,7 +36,8 @@ const KonanList: React.FC = observer(() => {
     };
 
     const onDragStart = (e: React.DragEvent, konan: Konan) => {
-        e.dataTransfer.setData('application/json', JSON.stringify({konanId: konan.id, fromShiftId: null}));
+        console.log('Dragging konan:', konan);
+        e.dataTransfer.setData('application/json', JSON.stringify({konanId: konan.id, fromShift: null}));
     };
     const handleEditDialogOpen = (konan: Konan) => {
         setSelectedKonan(konan);

@@ -11,7 +11,8 @@ import { Routes, Route, useNavigate } from 'react-router-dom';
 import LoginSignup from './components/LoginSignup';
 import authStore from './stores/AuthStore';
 import LogoutDialog from './components/dialogs/LogoutDialog';
-import ConstraintList from './components/ConstraintList';
+import ConstraintTab from './components/ConstraintTab';
+import AssignmentTab from './components/AssignmentTab';
 
 const App: React.FC = observer(() => {
     const [darkMode, setDarkMode] = useState(true);
@@ -133,14 +134,8 @@ const App: React.FC = observer(() => {
             </AppBar>
             <Routes>
                 <Route path="/login" element={<LoginSignup />} />
-                <Route path="/constraints" element={<Container maxWidth="md" dir="rtl"><ConstraintList /></Container>} />
-                <Route path="/" element={
-                    <Container maxWidth="lg" dir="rtl">
-                        <CalendarNavigation/>
-                        <ShiftTable/>
-                        <KonanList/>
-                    </Container>
-                } />
+                <Route path="/constraints" element={<Container maxWidth="md" dir="rtl"><ConstraintTab /></Container>} />
+                <Route path="/" element={<AssignmentTab />} />
             </Routes>
         </ThemeProvider>
     );

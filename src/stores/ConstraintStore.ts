@@ -1,10 +1,13 @@
 // You can expand this store with actions to add/remove constraints as needed
 import { makeAutoObservable } from 'mobx';
+import {ConstraintType} from "../components/ConstraintTypeList";
+import {ShiftType} from "./ShiftStore";
 
 export type Constraint = {
   konanId: string;
-  date: string; // ISO date string
-  shiftType: string;
+  date: Date; // ISO date string
+  shiftType: ShiftType;
+  constraintType: ConstraintType;
 };
 
 class ConstraintStore {
@@ -24,4 +27,3 @@ class ConstraintStore {
 }
 
 export const constraintStore = new ConstraintStore();
-

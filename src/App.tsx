@@ -1,13 +1,23 @@
 import React, {useState} from 'react';
-import {Container, CssBaseline, IconButton, Typography, AppBar, Toolbar, Box, Menu, MenuItem, Tooltip, Tabs, Tab} from '@mui/material';
+import {
+    AppBar,
+    Box,
+    Container,
+    CssBaseline,
+    IconButton,
+    Menu,
+    MenuItem,
+    Tab,
+    Tabs,
+    Toolbar,
+    Tooltip,
+    Typography
+} from '@mui/material';
 import {observer} from 'mobx-react-lite';
-import CalendarNavigation from './components/CalendarNavigation';
-import ShiftTable from './components/ShiftTable';
-import KonanList from './components/KonanList';
 import {createTheme, ThemeProvider} from '@mui/material/styles';
 import {DarkMode, LightMode} from '@mui/icons-material';
 import LoginIcon from '@mui/icons-material/Login';
-import { Routes, Route, useNavigate } from 'react-router-dom';
+import {Route, Routes, useNavigate} from 'react-router-dom';
 import LoginSignup from './components/LoginSignup';
 import authStore from './stores/AuthStore';
 import LogoutDialog from './components/dialogs/LogoutDialog';

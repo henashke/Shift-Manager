@@ -17,12 +17,12 @@ const KonanList: React.FC = observer(() => {
     const [selectedKonan, setSelectedKonan] = useState<Konan | undefined>(undefined);
     const [infoDialogOpen, setInfoDialogOpen] = useState(false);
 
-    const onDrop = (e: React.DragEvent) => {
+    const deleteAreaOnDropHandler = (e: React.DragEvent) => {
         e.preventDefault();
         const data = e.dataTransfer.getData('application/json');
         if (!data) return;
         try {
-            const {konan, fromShift}: { konan: Konan, fromShift: Shift } = JSON.parse(data);
+            const {fromShift}: { konan: Konan, fromShift: Shift } = JSON.parse(data);
             if (fromShift) {
                 shiftStore.unassignKonan(fromShift);
             }
@@ -75,9 +75,9 @@ const KonanList: React.FC = observer(() => {
                 onDragStart={onDragStart}
                 // onDrop={onDrop}
                 onDrop={e => {
-                    onDrop(e)
+                    deleteAreaOnDropHandler(e)
                 }}
-                contextMenuItems={(konan, close) => [
+                contextMenuItems={(konan) => [
                     {label: 'פרטי כונן', onClick: () => handleInfoDialogOpen(konan)},
                     {label: 'ערוך', onClick: () => handleEditDialogOpen(konan)},
                     {label: 'מחק', onClick: () => handleDeleteDialogOpen(konan)},

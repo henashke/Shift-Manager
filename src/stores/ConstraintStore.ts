@@ -1,29 +1,79 @@
 // You can expand this store with actions to add/remove constraints as needed
-import { makeAutoObservable } from 'mobx';
+import {makeAutoObservable} from 'mobx';
 import {ConstraintType} from "../components/ConstraintTypeList";
-import {sameShift, Shift, ShiftType} from "./ShiftStore";
+import {sameShift, Shift} from "./ShiftStore";
+import config from "../config";
+import authStore from "./AuthStore";
 
 export type Constraint = {
-  konanId: string;
-  date: Date;
-  shiftType: ShiftType;
-  constraintType: ConstraintType;
+    konanId: string;
+    shift: Shift;
+    constraintType: ConstraintType;
 };
 
 class ConstraintStore {
-  constraints: Constraint[] = [];
+    constraints: Constraint[] = [];
 
-  constructor() {
-    makeAutoObservable(this);
-  }
+    constructor() {
+        makeAutoObservable(this);
+    }
 
-  addConstraint(constraint: Constraint) {
-    this.constraints.push(constraint);
-  }
+    async addConstraint(constraint: Constraint) {
+        const url = `${config.API_BASE_URL}/constraints`;
+        console.log('Adding constraint:', constraint);
+        try {
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(constraint)
+            });
+            if (res.ok) {
+                this.constraints.push(constraint);
+            }
+        } catch (e) {
+            console.error('Failed to add constraint to server', e);
+        }
+    }
 
-  removeConstraint(shift: Shift) {
-    this.constraints = this.constraints.filter(c => !(sameShift({date: c.date, type: c.shiftType}, shift)));
-  }
+    async removeConstraint(shift: Shift) {
+        console.log('Removing constraint for shift:', shift);
+        const url = `${config.API_BASE_URL}/constraints`;
+        try {
+            const res = await fetch(url, {
+                method: 'DELETE',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    konanId: authStore.username,
+                    date: shift.date,
+                    shiftType: shift.type
+                })
+            });
+            if (res.ok) {
+                this.removeConstraintFromStore(shift);
+            }
+        } catch (e) {
+            console.error('Failed to remove constraint from server', e);
+        }
+    }
+
+    removeConstraintFromStore(shift: Shift) {
+        this.constraints = this.constraints.filter(c => !(sameShift({
+            date: c.shift.date,
+            type: c.shift.type
+        }, shift) && authStore.username === c.konanId));
+    }
+
+    async fetchConstraint() {
+        const url = `${config.API_BASE_URL}/constraints`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Failed to fetch constraints');
+        const json = await res.json();
+        const data: Constraint[] = (json);
+        this.constraints = data.map((c: Constraint) => ({
+            ...c,
+            date: new Date(c.shift.date)
+        }));
+    }
 }
 
 export const constraintStore = new ConstraintStore();

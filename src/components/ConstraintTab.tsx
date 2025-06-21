@@ -8,7 +8,6 @@ import {Container} from "@mui/material";
 import {sameShift, Shift} from '../stores/ShiftStore';
 import authStore from "../stores/AuthStore";
 import {constraintStore} from "../stores/ConstraintStore";
-import {Konan} from "../stores/KonanimStore";
 
 const constraintTypes = [ConstraintType.CANT, ConstraintType.PREFERS_NOT, ConstraintType.PREFERS];
 
@@ -34,8 +33,7 @@ const ConstraintTab: React.FC = observer(() => {
             if (konanId && !sameShift(fromShift, shift)) {
                 constraintStore.addConstraint({
                     konanId: konanId,
-                    date: shift.date,
-                    shiftType: shift.type,
+                    shift: shift,
                     constraintType: constraintType
                 });
             }
@@ -49,7 +47,7 @@ const ConstraintTab: React.FC = observer(() => {
         const data = e.dataTransfer.getData('application/json');
         if (!data) return;
         try {
-            const {konanId, constraintType, fromShift}: {
+            const {fromShift}: {
                 konanId: string,
                 constraintType: ConstraintType,
                 fromShift: Shift
@@ -57,7 +55,7 @@ const ConstraintTab: React.FC = observer(() => {
             if (fromShift) {
                 constraintStore.removeConstraint(fromShift);
             }
-        } catch(e) {
+        } catch (e) {
             console.error('Failed to parse data from drag event:', data, e);
         }
     };
@@ -65,25 +63,27 @@ const ConstraintTab: React.FC = observer(() => {
     const assignConstraint = (shift: Shift, constraintType: ConstraintType) => {
         constraintStore.addConstraint({
             constraintType: constraintType,
-            date: shift.date,
-            shiftType: shift.type,
+            shift: shift,
             konanId: authStore.username!
         });
     }
 
     const retreiveConstraintFromShift = (shift: Shift): ConstraintType | undefined => {
-        return constraintStore.constraints.find(c => c.konanId === authStore.username && c.date === shift.date && c.shiftType === shift.type)?.constraintType;
+        return constraintStore.constraints.find(c => c.konanId === authStore.username && sameShift({
+            date: c.shift.date,
+            type: c.shift.type
+        }, shift))?.constraintType;
     };
 
     return (
         <Container maxWidth="lg" dir="rtl">
             <CalendarNavigation/>
             <ShiftTable itemList={constraintTypes}
-                        onDropHandler={handleShiftTableDrop}
                         retrieveItemFromShift={retreiveConstraintFromShift}
                         assignHandler={assignConstraint}
                         getItemName={(item: ConstraintType) => item.toString()}
-                        onDragStartHandler={onDragStart}/>
+                        onDragStartHandler={onDragStart}
+                        onDropHandler={handleShiftTableDrop}/>
             <DraggableList
                 items={constraintTypes}
                 getKey={item => item}

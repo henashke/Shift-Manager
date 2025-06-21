@@ -21,6 +21,7 @@ import konanimStore from '../stores/KonanimStore';
 import AssignToShiftDialog from './AssignToShiftDialog';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import PersonRemoveIcon from '@mui/icons-material/PersonRemove';
+import {constraintStore} from "../stores/ConstraintStore";
 
 const days = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 const shiftTypes = ['יום', 'לילה'] as const;
@@ -46,6 +47,8 @@ function ShiftTable<T>({ retrieveItemFromShift, getItemName, assignHandler, item
 
     useEffect(() => {
         konanimStore.fetchKonanim();
+        shiftStore.fetchShifts();
+        constraintStore.fetchConstraint();
     }, []);
 
     const onDrop = (e: React.DragEvent, shift: Shift) => {

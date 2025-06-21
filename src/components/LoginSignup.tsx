@@ -32,7 +32,7 @@ const LoginSignup: React.FC = observer(() => {
       const res = await fetch(`${config.API_BASE_URL}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({ name: username, password: password })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'An error occurred');

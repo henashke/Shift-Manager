@@ -1,21 +1,20 @@
 import React, { useState } from 'react';
 import CalendarNavigation from './CalendarNavigation';
 import ShiftTable from './ShiftTable';
-import KonanList from './KonanList';
+import UserList from './UserList';
 import {Container} from "@mui/material";
-import store from "../stores/ShiftStore";
-import shiftStore, {Konan, sameShift, Shift} from "../stores/ShiftStore";
-import konanimStore from "../stores/KonanimStore";
+import usersStore from "../stores/UsersStore";
+import shiftStore, {sameShift, Shift, User} from "../stores/ShiftStore";
 
 const AssignmentTab: React.FC = () => {
-    const {assignKonan} = store;
-    const {konanim} = konanimStore;
+    const { assignUser } = shiftStore;
+    const { users } = usersStore;
     const [isDragged, setIsDragged] = useState(false);
 
 
-    const onDragStart = (e: React.DragEvent, konan: Konan, fromShift?: Shift) => {
+    const onDragStart = (e: React.DragEvent, user: User, fromShift?: Shift) => {
         setIsDragged(true);
-        e.dataTransfer.setData('application/json', JSON.stringify({konan: konan, fromShift: fromShift || null}));
+        e.dataTransfer.setData('application/json', JSON.stringify({ user: user, fromShift: fromShift || null }));
     };
 
     const onDragEnd = () => {
@@ -28,17 +27,17 @@ const AssignmentTab: React.FC = () => {
         const data = e.dataTransfer.getData('application/json');
         if (!data) return;
         try {
-            const {konan, fromShift}: { konan: Konan, fromShift: Shift } = JSON.parse(data);
-            if (konan && !sameShift(fromShift, shift)) {
-                assignKonan(shift, konan.id);
+            const { user, fromShift }: { user: User, fromShift: Shift } = JSON.parse(data);
+            if (user && !sameShift(fromShift, shift)) {
+                assignUser(shift, user.id);
             }
-        } catch(e) {
+        } catch (e) {
             console.error("Failed to parse data from drag event:", data, e);
         }
     };
 
-    const getKonanFromShift = (shift: Shift): Konan | undefined => {
-        return konanim.find(k => k.id === shiftStore.getAssignedShift(shift)?.konanId);
+    const getUserFromShift = (shift: Shift): User | undefined => {
+        return users.find(u => shiftStore.getAssignedShift(shift)?.userId === u.id);
     }
 
     return (
@@ -47,11 +46,11 @@ const AssignmentTab: React.FC = () => {
             <ShiftTable onDropHandler={handleDrop}
                         onDragStartHandler={onDragStart}
                         onDragEndHandler={onDragEnd}
-                        assignHandler={(shift, konan) => assignKonan(shift, konan.id)}
-                        retrieveItemFromShift={getKonanFromShift}
-                        getItemName={(konan: Konan) => (konan.name)}
-                        itemList={konanim}/>
-            <KonanList isDragged={isDragged}/>
+                        assignHandler={(shift, user) => assignUser(shift, user.id)}
+                        retrieveItemFromShift={getUserFromShift}
+                        getItemName={(user: User) => (user.name)}
+                        itemList={users}/>
+            <UserList isDragged={isDragged}/>
         </Container>
     );
 };

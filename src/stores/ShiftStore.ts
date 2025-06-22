@@ -1,12 +1,11 @@
 import {makeAutoObservable, runInAction} from 'mobx';
 
-export interface Konan {
+
+export interface User {
     id: string;
     name: string;
     score: number;
 }
-
-export type Day = 'ראשון' | 'שני' | 'שלישי' | 'רביעי' | 'חמישי' | 'שישי' | 'שבת';
 export type ShiftType = 'יום' | 'לילה';
 
 export interface Shift {
@@ -14,8 +13,8 @@ export interface Shift {
     type: ShiftType;
 }
 
-export interface AssignedShift extends Shift {
-    konanId: string;
+export interface AssignedShift extends Shift{
+    userId?: string;
 }
 
 export class ShiftStore {
@@ -44,43 +43,31 @@ export class ShiftStore {
         this.loading = true;
         setTimeout(() => {
             runInAction(() => {
-        //         const types = ['יום', 'לילה'] as const;
-        //         const days: Day[] = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
-        //         const weekDates = this.weekDates;
                 this.assignedShifts = [];
-        //         weekDates.forEach((date, i) => {
-        //             types.forEach(type => {
-        //                 this.assignedShifts.push({
-        //                     date: date,
-        //                     type,
-        //                 });
-        //             });
-        //         });
                 this.loading = false;
             });
         }, 500);
     };
 
-    assignKonan = (shift: Shift, konanId: string) => {
+    assignUser = (shift: Shift, userId: string) => {
         const assignedShift = this.assignedShifts.find(assigndShift => sameShift(assigndShift, shift));
         if (assignedShift) {
-            assignedShift.konanId = konanId;
+            assignedShift.userId = userId;
             return;
         }
         const newShift: AssignedShift = {
             ...shift,
-            konanId: konanId,
+            userId: userId,
         };
         this.assignedShifts.push(newShift);
     };
 
-    unassignKonan = (shift: Shift) => {
+    unassignUser = (shift: Shift) => {
         this.assignedShifts = this.assignedShifts.filter(assignedShift => !sameShift(assignedShift, shift));
     };
 
-    addKonan = (name: string) => {
-        console.log(`Adding konan with name: ${name}`);
-        // Use konanimStore to add konanim instead
+    addUser = (name: string) => {
+        // Use userStore to add users instead
         // This method can be removed or refactored if not needed
     };
 
@@ -96,19 +83,6 @@ export class ShiftStore {
 
 const store = new ShiftStore();
 export default store;
-
-export async function httpGetKonanim() {
-    const res = await fetch('http://localhost:8080/getKonanim');
-    if (!res.ok) throw new Error('Failed to fetch konanim');
-    return res.json();
-}
-
-export async function httpGetShifts(weekStartIso: string) {
-    const res = await fetch(`http://localhost:8080/getShifts?weekStart=${encodeURIComponent(weekStartIso)}`);
-    if (!res.ok) throw new Error('Failed to fetch shifts');
-    return res.json();
-}
-
 export const sameShift = (shift1: Shift, shift2: Shift) => {
     if (!shift1 || !shift2) return false;
     const date1 = new Date(shift1.date);

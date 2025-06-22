@@ -6,7 +6,7 @@ import config from "../config";
 import authStore from "./AuthStore";
 
 export type Constraint = {
-    konanId: string;
+    userId: string;
     shift: Shift;
     constraintType: ConstraintType;
 };
@@ -43,7 +43,7 @@ class ConstraintStore {
                 method: 'DELETE',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
-                    konanId: authStore.username,
+                    userId: authStore.username,
                     date: shift.date,
                     shiftType: shift.type
                 })
@@ -60,7 +60,7 @@ class ConstraintStore {
         this.constraints = this.constraints.filter(c => !(sameShift({
             date: c.shift.date,
             type: c.shift.type
-        }, shift) && authStore.username === c.konanId));
+        }, shift) && authStore.username === c.userId));
     }
 
     async fetchConstraint() {

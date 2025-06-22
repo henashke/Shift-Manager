@@ -9,7 +9,6 @@ import {observer} from 'mobx-react-lite';
 
 const AssignmentTab: React.FC = observer(() => {
     const { users } = usersStore;
-    const { assignedShifts } = shiftStore;
     const [isDragged, setIsDragged] = useState(false);
 
 

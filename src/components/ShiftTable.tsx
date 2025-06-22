@@ -13,9 +13,7 @@ import {
     TableContainer,
     TableHead,
     TableRow,
-    Typography,
-    Button,
-    Box as MuiBox
+    Typography
 } from '@mui/material';
 import store from '../stores/ShiftStore';
 import shiftStore, {sameShift, Shift} from '../stores/ShiftStore';

@@ -170,7 +170,6 @@ function ShiftTable<T>({
                             variant="contained"
                             color="primary"
                             onClick={shiftStore.savePendingAssignments}
-                            // sx={{ml: 1}}
                         >
                             שמור שיבוצים
                         </Button>

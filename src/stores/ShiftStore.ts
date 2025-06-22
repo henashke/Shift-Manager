@@ -1,4 +1,5 @@
 import {makeAutoObservable, runInAction} from 'mobx';
+import config from "../config";
 
 
 export interface User {
@@ -14,11 +15,12 @@ export interface Shift {
 }
 
 export interface AssignedShift extends Shift{
-    userId?: string;
+    userId: string;
 }
 
 export class ShiftStore {
     assignedShifts: AssignedShift[] = [];
+    pendingAssignedShifts: AssignedShift[] = [];
     weekOffset = 0;
     loading = false;
 
@@ -39,22 +41,40 @@ export class ShiftStore {
         });
     }
 
-    fetchShifts = () => {
+    fetchShifts = async () => {
         this.loading = true;
-        setTimeout(() => {
+        try {
+            const response = await fetch(`${config.API_BASE_URL}/shifts`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+            if (!response.ok) throw new Error('Failed to fetch shifts');
+            const data = await response.json();
+            runInAction(() => {
+                this.assignedShifts = data.map((shift: any) => ({
+                    ...shift,
+                    date: new Date(shift.date)
+                }));
+                this.loading = false;
+            });
+        } catch (error) {
             runInAction(() => {
                 this.assignedShifts = [];
                 this.loading = false;
             });
-        }, 500);
+            console.error(error);
+        }
     };
 
     assignUser = (shift: Shift, userId: string) => {
-        const assignedShift = this.assignedShifts.find(assigndShift => sameShift(assigndShift, shift));
+        const assignedShift = this.assignedShifts.find(assignedShift => sameShift(assignedShift, shift));
         if (assignedShift) {
             assignedShift.userId = userId;
             return;
         }
+        this.assignedShifts.filter(s => !sameShift(s, shift)); //remove any existing shift with the same date and type
         const newShift: AssignedShift = {
             ...shift,
             userId: userId,
@@ -63,6 +83,11 @@ export class ShiftStore {
     };
 
     unassignUser = (shift: Shift) => {
+        const pendingShiftToUnassign = this.pendingAssignedShifts.find(s => sameShift(s, shift));
+        if(pendingShiftToUnassign) {
+            this.pendingAssignedShifts = this.pendingAssignedShifts.filter(s => !sameShift(s, pendingShiftToUnassign));
+            return;
+        }
         this.assignedShifts = this.assignedShifts.filter(assignedShift => !sameShift(assignedShift, shift));
     };
 
@@ -78,6 +103,59 @@ export class ShiftStore {
     setWeekOffset = (offset: number) => {
         this.weekOffset = offset;
         this.fetchShifts();
+    }
+
+    // Add a shift to the pending array
+    assignShiftPending = (shift: AssignedShift) => {
+        // Remove any existing pending assignment for the same shift (date+type)
+        this.pendingAssignedShifts = this.pendingAssignedShifts.filter(s =>
+            !(s.date.getTime() === shift.date.getTime() && s.type === shift.type)
+        );
+        this.pendingAssignedShifts.push(shift);
+    };
+
+    // Helper to merge pending shifts into assignedShifts
+    mergePendingToAssigned = () => {
+        this.pendingAssignedShifts.forEach(pending => {
+            const idx = this.assignedShifts.findIndex(s =>
+                s.date.getTime() === pending.date.getTime() && s.type === pending.type
+            );
+            if (idx !== -1) {
+                this.assignedShifts[idx] = pending;
+            } else {
+                this.assignedShifts.push(pending);
+            }
+        });
+        this.pendingAssignedShifts = [];
+        this.loading = false;
+    };
+
+    // Save all pending assignments to the server
+    savePendingAssignments = async () => {
+        this.loading = true;
+        try {
+            const response = await fetch(`${config.API_BASE_URL}/shifts`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(this.pendingAssignedShifts),
+            });
+            if (!response.ok) throw new Error('Failed to save shifts');
+            runInAction(() => {
+                this.mergePendingToAssigned();
+            });
+        } catch (error) {
+            runInAction(() => {
+                this.loading = false;
+            });
+            // Optionally handle error (e.g., show notification)
+            console.error(error);
+        }
+    };
+
+    get hasPendingAssignments() {
+        return this.pendingAssignedShifts.length > 0;
     }
 }
 

@@ -13,7 +13,9 @@ import {
     TableContainer,
     TableHead,
     TableRow,
-    Typography
+    Typography,
+    Button,
+    Box as MuiBox
 } from '@mui/material';
 import store from '../stores/ShiftStore';
 import shiftStore, {sameShift, Shift} from '../stores/ShiftStore';
@@ -30,14 +32,28 @@ interface ShiftTableProps<T> {
     retrieveItemFromShift: (shift: Shift) => T | undefined;
     getItemName: (item: T) => string;
     assignHandler: (shift: Shift, item: T) => void;
+    unassignHandler: (shift: Shift) => void;
     itemList: T[];
+    assignedShifts: Shift[];
+    pendingItem?: (shift: Shift) => T | undefined;
     onDropHandler?: (e: React.DragEvent, shift: Shift) => void;
     onDragEndHandler?: () => void;
     onDragStartHandler?: (e: React.DragEvent, draggedElement: T, fromShift?: Shift) => void;
 }
 
-function ShiftTable<T>({ retrieveItemFromShift, getItemName, assignHandler, itemList, onDropHandler, onDragStartHandler, onDragEndHandler }: ShiftTableProps<T>) {
-    const {weekDates, assignedShifts} = store;
+function ShiftTable<T>({
+                           retrieveItemFromShift,
+                           getItemName,
+                           assignHandler,
+                           unassignHandler,
+                           itemList,
+                           assignedShifts,
+                           pendingItem,
+                           onDropHandler,
+                           onDragStartHandler,
+                           onDragEndHandler
+                       }: ShiftTableProps<T>) {
+    const {weekDates} = store;
     const [assignDialogOpen, setAssignDialogOpen] = useState(false);
     const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
     const [contextMenu, setContextMenu] = useState<{
@@ -94,16 +110,83 @@ function ShiftTable<T>({ retrieveItemFromShift, getItemName, assignHandler, item
         handleCloseContextMenu();
     };
 
-    const handleRemoveUser = () => {
+    const handleRemoveItem = () => {
         if (contextMenu?.shift) {
-            store.unassignUser(contextMenu.shift);
+            console.log('Removing item from shift:', contextMenu.shift);
+            unassignHandler?.(contextMenu.shift);
         }
         handleCloseContextMenu();
     };
 
+    // Helper to get the assigned item, prioritizing pendingItem prop if provided
+    const getPendingOrAssignedItem = (shift: Shift) => {
+        if (pendingItem) {
+            const pending = pendingItem(shift);
+            if (pending) return pending;
+        }
+        return retrieveItemFromShift(shift);
+    };
+
+    // ColorIndicators component for legend
+    const ColorIndicators = () => (
+        // <MuiBox sx={{display: 'flex', flexDirection: 'column', alignItems: 'flex-start', mt: 0.5, gap: 1}}>
+        <>
+            <MuiBox sx={{display: 'flex', alignItems: 'center'}}>
+                <MuiBox sx={{
+                    width: 18,
+                    height: 18,
+                    bgcolor: 'primary.main',
+                    borderRadius: 1,
+                    ml: 1,
+                    border: '1px solid',
+                    borderColor: 'primary.dark'
+                }}/>
+                <Typography variant="caption">משובץ</Typography>
+            </MuiBox>
+            <MuiBox sx={{display: 'flex', alignItems: 'center'}}>
+                <MuiBox sx={{
+                    width: 18,
+                    height: 18,
+                    bgcolor: 'secondary.main',
+                    borderRadius: 1,
+                    ml: 1,
+                    border: '1px solid',
+                    borderColor: 'secondary.dark'
+                }}/>
+                <Typography variant="caption">ממתין לשמירה</Typography>
+            </MuiBox>
+        </>
+        // </MuiBox>
+    );
+
     return (
         <TableContainer component={Paper} sx={{mt: 3, mb: 4, borderRadius: 3, boxShadow: 3, direction: 'rtl'}}
                         dir="rtl">
+            {/* Save/Cancel buttons at top left */}
+            {shiftStore.hasPendingAssignments && (
+                <MuiBox sx={{display: 'flex', flexDirection: 'column', alignItems: 'flex-start', p: 2, pt: 2, pb: 0}}>
+                    <MuiBox sx={{display: 'flex', alignItems: 'center', mb: 1, gap: 1}}>
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            onClick={shiftStore.savePendingAssignments}
+                            // sx={{ml: 1}}
+                        >
+                            שמור שיבוצים
+                        </Button>
+                        <Button
+                            variant="outlined"
+                            color="secondary"
+                            onClick={() => {
+                                shiftStore.pendingAssignedShifts = [];
+                            }}
+                        >
+                            בטל
+                        </Button>
+                    <ColorIndicators/>
+                    </MuiBox>
+                </MuiBox>
+            )}
             <Table className="shift-table">
                 <TableHead>
                     <TableRow>
@@ -125,7 +208,8 @@ function ShiftTable<T>({ retrieveItemFromShift, getItemName, assignHandler, item
                             <TableCell sx={{fontWeight: 600}}>{shiftType}</TableCell>
                             {weekDates.map((date) => {
                                 const shift = {date: date, type: shiftType};
-                                const item = retrieveItemFromShift(shift);
+                                const item = getPendingOrAssignedItem(shift);
+                                const isPending = pendingItem?.(shift) !== undefined;
                                 return (
                                     <TableCell
                                         key={date.toISOString() + shiftType}
@@ -139,7 +223,7 @@ function ShiftTable<T>({ retrieveItemFromShift, getItemName, assignHandler, item
                                         {item ? (
                                             <Box
                                                 sx={{
-                                                    background: theme => theme.palette.primary.main,
+                                                    background: theme => isPending ? theme.palette.secondary.main : theme.palette.primary.main,
                                                     color: 'common.white',
                                                     borderRadius: 1,
                                                     px: 1,
@@ -188,8 +272,8 @@ function ShiftTable<T>({ retrieveItemFromShift, getItemName, assignHandler, item
                     </ListItemIcon>
                     <ListItemText>שבץ כונן</ListItemText>
                 </MenuItem>
-                <MenuItem onClick={handleRemoveUser}
-                          disabled={!contextMenu?.shift || !assignedShifts.find(s => sameShift(s, contextMenu.shift!))?.userId}>
+                <MenuItem onClick={handleRemoveItem}
+                          disabled={!contextMenu?.shift || !assignedShifts.find(s => sameShift(s, contextMenu.shift!))}>
                     <ListItemIcon>
                         <PersonRemoveIcon fontSize="small"/>
                     </ListItemIcon>

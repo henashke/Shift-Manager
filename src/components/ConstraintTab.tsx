@@ -7,7 +7,7 @@ import ShiftTable from './ShiftTable';
 import {Container} from "@mui/material";
 import {sameShift, Shift} from '../stores/ShiftStore';
 import authStore from "../stores/AuthStore";
-import {constraintStore} from "../stores/ConstraintStore";
+import {Constraint, constraintStore} from "../stores/ConstraintStore";
 
 const constraintTypes = [ConstraintType.CANT, ConstraintType.PREFERS_NOT, ConstraintType.PREFERS];
 
@@ -90,8 +90,10 @@ const ConstraintTab: React.FC = observer(() => {
         <Container maxWidth="lg" dir="rtl">
             <CalendarNavigation/>
             <ShiftTable itemList={constraintTypes}
+                        assignedShifts={constraintStore.constraints.map((c: Constraint) => ({type: c.shift.type, date: c.shift.date}))}
                         retrieveItemFromShift={retreiveConstraintFromShift}
                         assignHandler={assignConstraint}
+                        unassignHandler={(shift: Shift) => constraintStore.removeConstraint(shift)}
                         getItemName={(item: ConstraintType) => item.toString()}
                         onDragStartHandler={onAssignedConstraintDragStart}
                         onDragEndHandler={onDragEnd}

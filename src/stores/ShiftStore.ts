@@ -1,12 +1,11 @@
 import {makeAutoObservable, runInAction} from 'mobx';
 
+
 export interface User {
     id: string;
     name: string;
     score: number;
 }
-
-export type Day = 'ראשון' | 'שני' | 'שלישי' | 'רביעי' | 'חמישי' | 'שישי' | 'שבת';
 export type ShiftType = 'יום' | 'לילה';
 
 export interface Shift {
@@ -84,19 +83,6 @@ export class ShiftStore {
 
 const store = new ShiftStore();
 export default store;
-
-export async function httpGetUsers() {
-    const res = await fetch('http://localhost:8080/getUsers');
-    if (!res.ok) throw new Error('Failed to fetch users');
-    return res.json();
-}
-
-export async function httpGetShifts(weekStartIso: string) {
-    const res = await fetch(`http://localhost:8080/getShifts?weekStart=${encodeURIComponent(weekStartIso)}`);
-    if (!res.ok) throw new Error('Failed to fetch shifts');
-    return res.json();
-}
-
 export const sameShift = (shift1: Shift, shift2: Shift) => {
     if (!shift1 || !shift2) return false;
     const date1 = new Date(shift1.date);

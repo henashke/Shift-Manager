@@ -82,13 +82,32 @@ export class ShiftStore {
         this.assignedShifts.push(newShift);
     };
 
-    unassignUser = (shift: Shift) => {
+    unassignUser = async (shift: Shift) => {
         const pendingShiftToUnassign = this.pendingAssignedShifts.find(s => sameShift(s, shift));
-        if(pendingShiftToUnassign) {
+        if (pendingShiftToUnassign) {
             this.pendingAssignedShifts = this.pendingAssignedShifts.filter(s => !sameShift(s, pendingShiftToUnassign));
             return;
         }
-        this.assignedShifts = this.assignedShifts.filter(assignedShift => !sameShift(assignedShift, shift));
+        this.loading = true;
+        try {
+            const response = await fetch(`${config.API_BASE_URL}/shifts`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(shift),
+            });
+            if (!response.ok) throw new Error('Failed to unassign shift');
+            runInAction(() => {
+                this.assignedShifts = this.assignedShifts.filter(assignedShift => !sameShift(assignedShift, shift));
+                this.loading = false;
+            });
+        } catch (error) {
+            runInAction(() => {
+                this.loading = false;
+            });
+            console.error(error);
+        }
     };
 
     addUser = (name: string) => {

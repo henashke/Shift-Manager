@@ -19,7 +19,6 @@ const AssignmentTab: React.FC = observer(() => {
     };
 
     const onDragEnd = () => {
-        console.log("Drag ended");
         setIsDragged(false);
     };
 
@@ -45,10 +44,9 @@ const AssignmentTab: React.FC = observer(() => {
         return users.find(u => u.id === shiftStore.pendingAssignedShifts.find(assignedShift => sameShift(assignedShift, shift))?.userId)
     }
 
-    console.log(assignedShifts)
 
     return (
-        <Container maxWidth={"lg"} dir={"rtl"}>
+        <Container maxWidth={"xl"} dir={"rtl"}>
             <CalendarNavigation/>
             <ShiftTable onDropHandler={handleDrop}
                         onDragStartHandler={onDragStart}
@@ -59,7 +57,12 @@ const AssignmentTab: React.FC = observer(() => {
                         retrieveItemFromShift={getUserFromShift}
                         getItemName={u => u.name}
                         itemList={users}
-                        assignedShifts={shiftStore.pendingAssignedShifts}
+                        assignedShifts={shiftStore.pendingAssignedShifts.concat(shiftStore.assignedShifts)}
+                        isPendingItems={shiftStore.pendingAssignedShifts.length > 0}
+                        onSave={shiftStore.savePendingAssignments}
+                        onCancel={() => {
+                            shiftStore.pendingAssignedShifts = [];
+                        }}
             />
             <UserList isDragged={isDragged}/>
         </Container>

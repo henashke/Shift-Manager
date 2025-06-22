@@ -1,27 +1,27 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 import config from '../config';
 
-export interface Konan {
+export interface User {
   id: string;
   name: string;
   score: number;
 }
 
-class KonanimStore {
-  konanim: Konan[] = [];
+class UserStore {
+  users: User[] = [];
   loading = false;
 
   constructor() {
     makeAutoObservable(this);
   }
 
-  fetchKonanim = async () => {
+  fetchUsers = async () => {
     this.loading = true;
     try {
-      const res = await fetch(`${config.API_BASE_URL}/konanim`);
+      const res = await fetch(`${config.API_BASE_URL}/users`);
       const data = await res.json();
       runInAction(() => {
-        this.konanim = data;
+        this.users = data;
         this.loading = false;
       });
     } catch (e) {
@@ -31,11 +31,10 @@ class KonanimStore {
     }
   };
 
-  getKonanById = (id: string) => {
-    return this.konanim.find(k => k.id === id);
+  getUserById = (id: string) => {
+    return this.users.find(u => u.id === id);
   };
 }
 
-const konanimStore = new KonanimStore();
-export default konanimStore;
-
+const usersStore = new UserStore();
+export default usersStore;

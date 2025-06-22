@@ -17,7 +17,7 @@ import {
 } from '@mui/material';
 import store from '../stores/ShiftStore';
 import shiftStore, {sameShift, Shift} from '../stores/ShiftStore';
-import konanimStore from '../stores/KonanimStore';
+import usersStore from '../stores/UsersStore';
 import AssignToShiftDialog from './AssignToShiftDialog';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import PersonRemoveIcon from '@mui/icons-material/PersonRemove';
@@ -47,7 +47,7 @@ function ShiftTable<T>({ retrieveItemFromShift, getItemName, assignHandler, item
     } | null>(null);
 
     useEffect(() => {
-        konanimStore.fetchKonanim();
+        usersStore.fetchUsers();
         shiftStore.fetchShifts();
         constraintStore.fetchConstraint();
     }, []);
@@ -86,7 +86,7 @@ function ShiftTable<T>({ retrieveItemFromShift, getItemName, assignHandler, item
         setContextMenu(null);
     };
 
-    const handleAssignKonan = () => {
+    const handleAssignUser = () => {
         if (contextMenu?.shift) {
             setSelectedShift(contextMenu.shift);
             setAssignDialogOpen(true);
@@ -94,9 +94,9 @@ function ShiftTable<T>({ retrieveItemFromShift, getItemName, assignHandler, item
         handleCloseContextMenu();
     };
 
-    const handleRemoveKonan = () => {
+    const handleRemoveUser = () => {
         if (contextMenu?.shift) {
-            store.unassignKonan(contextMenu.shift);
+            store.unassignUser(contextMenu.shift);
         }
         handleCloseContextMenu();
     };
@@ -182,14 +182,14 @@ function ShiftTable<T>({ retrieveItemFromShift, getItemName, assignHandler, item
                         : undefined
                 }
             >
-                <MenuItem onClick={handleAssignKonan}>
+                <MenuItem onClick={handleAssignUser}>
                     <ListItemIcon>
                         <PersonAddIcon fontSize="small"/>
                     </ListItemIcon>
                     <ListItemText>שבץ כונן</ListItemText>
                 </MenuItem>
-                <MenuItem onClick={handleRemoveKonan}
-                          disabled={!contextMenu?.shift || !assignedShifts.find(s => sameShift(s, contextMenu.shift!))?.konanId}>
+                <MenuItem onClick={handleRemoveUser}
+                          disabled={!contextMenu?.shift || !assignedShifts.find(s => sameShift(s, contextMenu.shift!))?.userId}>
                     <ListItemIcon>
                         <PersonRemoveIcon fontSize="small"/>
                     </ListItemIcon>

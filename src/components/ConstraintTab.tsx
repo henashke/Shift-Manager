@@ -21,7 +21,7 @@ const ConstraintTab: React.FC = observer(() => {
 
     const setDragData = (e: React.DragEvent, type: ConstraintType, fromShift?: Shift) => {
         e.dataTransfer.setData('application/json', JSON.stringify({
-            konanId: authStore.username,
+            userId: authStore.username,
             constraintType: type,
             fromShift: fromShift || null
         }));
@@ -36,14 +36,14 @@ const ConstraintTab: React.FC = observer(() => {
         const data = e.dataTransfer.getData('application/json');
         if (!data) return;
         try {
-            const {konanId, constraintType, fromShift}: {
-                konanId: string,
+            const {userId, constraintType, fromShift}: {
+                userId: string,
                 constraintType: ConstraintType,
                 fromShift: Shift
             } = JSON.parse(data);
-            if (konanId && !sameShift(fromShift, shift)) {
+            if (userId && !sameShift(fromShift, shift)) {
                 constraintStore.addConstraint({
-                    konanId: konanId,
+                    userId: userId,
                     shift: shift,
                     constraintType: constraintType
                 });
@@ -59,7 +59,7 @@ const ConstraintTab: React.FC = observer(() => {
         if (!data) return;
         try {
             const {fromShift}: {
-                konanId: string,
+                userId: string,
                 constraintType: ConstraintType,
                 fromShift: Shift
             } = JSON.parse(data);
@@ -75,12 +75,12 @@ const ConstraintTab: React.FC = observer(() => {
         constraintStore.addConstraint({
             constraintType: constraintType,
             shift: shift,
-            konanId: authStore.username!
+            userId: authStore.username!
         });
     }
 
     const retreiveConstraintFromShift = (shift: Shift): ConstraintType | undefined => {
-        return constraintStore.constraints.find(c => c.konanId === authStore.username && sameShift({
+        return constraintStore.constraints.find(c => c.userId === authStore.username && sameShift({
             date: c.shift.date,
             type: c.shift.type
         }, shift))?.constraintType;

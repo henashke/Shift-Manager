@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 import {observer} from 'mobx-react-lite';
 import {
     Box,
@@ -16,66 +16,67 @@ import {
     Typography
 } from '@mui/material';
 import store from '../stores/ShiftStore';
+import shiftStore, {sameShift, Shift} from '../stores/ShiftStore';
 import konanimStore from '../stores/KonanimStore';
-import AssignKonanDialog from './AssignKonanDialog';
+import AssignToShiftDialog from './AssignToShiftDialog';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import PersonRemoveIcon from '@mui/icons-material/PersonRemove';
+import {constraintStore} from "../stores/ConstraintStore";
 
-// Hebrew day and shift names
 const days = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 const shiftTypes = ['יום', 'לילה'] as const;
 
-const ShiftTable: React.FC = observer(() => {
-    const {weekDates, shifts, assignKonan} = store;
-    const {konanim} = konanimStore;
+interface ShiftTableProps<T> {
+    retrieveItemFromShift: (shift: Shift) => T | undefined;
+    getItemName: (item: T) => string;
+    assignHandler: (shift: Shift, item: T) => void;
+    itemList: T[];
+    onDropHandler?: (e: React.DragEvent, shift: Shift) => void;
+    onDragEndHandler?: () => void;
+    onDragStartHandler?: (e: React.DragEvent, draggedElement: T, fromShift?: Shift) => void;
+}
+
+function ShiftTable<T>({ retrieveItemFromShift, getItemName, assignHandler, itemList, onDropHandler, onDragStartHandler, onDragEndHandler }: ShiftTableProps<T>) {
+    const {weekDates, assignedShifts} = store;
     const [assignDialogOpen, setAssignDialogOpen] = useState(false);
-    const [selectedShiftId, setSelectedShiftId] = useState<string | null>(null);
+    const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
     const [contextMenu, setContextMenu] = useState<{
         mouseX: number;
         mouseY: number;
-        shiftId: string | null
+        shift: Shift | null
     } | null>(null);
 
     useEffect(() => {
         konanimStore.fetchKonanim();
+        shiftStore.fetchShifts();
+        constraintStore.fetchConstraint();
     }, []);
 
-    // Drag and drop handlers
-    const onDrop = (e: React.DragEvent, shiftId: string) => {
-        e.preventDefault();
-        const data = e.dataTransfer.getData('application/json');
-        if (!data) return;
-        try {
-            const {konanId, fromShiftId} = JSON.parse(data);
-            if (konanId && shiftId && shiftId !== fromShiftId) {
-                assignKonan(shiftId, konanId);
-            }
-        } catch {
-            // fallback: do nothing
-        }
+    const onDrop = (e: React.DragEvent, shift: Shift) => {
+        onDropHandler?.(e, shift);
     };
 
     const onDragOver = (e: React.DragEvent) => {
         e.preventDefault();
     };
 
-    const handleCellClick = (shiftId: string) => {
-        setSelectedShiftId(shiftId);
+    const handleCellClick = (shift: Shift) => {
+        setSelectedShift(shift);
         setAssignDialogOpen(true);
     };
 
-    const onDragStart = (e: React.DragEvent, konanId: string, fromShiftId?: string) => {
-        e.dataTransfer.setData('application/json', JSON.stringify({konanId, fromShiftId: fromShiftId || null}));
+    const onDragStart = (e: React.DragEvent, draggedItem: T, fromShift?: Shift) => {
+        onDragStartHandler?.(e, draggedItem, fromShift);
     };
 
-    const handleContextMenu = (event: React.MouseEvent, shiftId: string) => {
+    const handleContextMenu = (event: React.MouseEvent, shift: Shift) => {
         event.preventDefault();
         setContextMenu(
             contextMenu === null
                 ? {
                     mouseX: event.clientX - 2,
                     mouseY: event.clientY - 4,
-                    shiftId,
+                    shift,
                 }
                 : null,
         );
@@ -86,16 +87,16 @@ const ShiftTable: React.FC = observer(() => {
     };
 
     const handleAssignKonan = () => {
-        if (contextMenu?.shiftId) {
-            setSelectedShiftId(contextMenu.shiftId);
+        if (contextMenu?.shift) {
+            setSelectedShift(contextMenu.shift);
             setAssignDialogOpen(true);
         }
         handleCloseContextMenu();
     };
 
     const handleRemoveKonan = () => {
-        if (contextMenu?.shiftId) {
-            store.unassignKonan(contextMenu.shiftId);
+        if (contextMenu?.shift) {
+            store.unassignKonan(contextMenu.shift);
         }
         handleCloseContextMenu();
     };
@@ -123,19 +124,19 @@ const ShiftTable: React.FC = observer(() => {
                         <TableRow key={shiftType}>
                             <TableCell sx={{fontWeight: 600}}>{shiftType}</TableCell>
                             {weekDates.map((date) => {
-                                const shift = shifts.find(s => s.date === date.toISOString() && s.type === shiftType);
-                                const konan = konanim.find(e => e.id === shift?.konanId);
+                                const shift = {date: date, type: shiftType};
+                                const item = retrieveItemFromShift(shift);
                                 return (
                                     <TableCell
                                         key={date.toISOString() + shiftType}
                                         align="center"
-                                        onDrop={e => onDrop(e, shift?.id || '')}
+                                        onDrop={e => onDrop(e, shift)}
                                         onDragOver={onDragOver}
-                                        onClick={() => shift && handleCellClick(shift.id)}
-                                        onContextMenu={e => shift && handleContextMenu(e, shift.id)}
+                                        onClick={() => shift && handleCellClick(shift)}
+                                        onContextMenu={e => shift && handleContextMenu(e, shift)}
                                         sx={{minHeight: 48, borderRadius: 2, color: 'common.white', cursor: 'pointer'}}
                                     >
-                                        {konan ? (
+                                        {item ? (
                                             <Box
                                                 sx={{
                                                     background: theme => theme.palette.primary.main,
@@ -146,9 +147,10 @@ const ShiftTable: React.FC = observer(() => {
                                                     fontWeight: 700
                                                 }}
                                                 draggable
-                                                onDragStart={e => onDragStart(e, konan.id, shift?.id)}
+                                                onDragStart={e => onDragStart(e, item, shift)}
+                                                onDragEnd={onDragEndHandler}
                                             >
-                                                {konan.name}
+                                                {getItemName(item)}
                                             </Box>
                                         ) : (
                                             <Typography variant="caption" sx={{color: '#7d7bf2'}}>כונן
@@ -161,8 +163,15 @@ const ShiftTable: React.FC = observer(() => {
                     ))}
                 </TableBody>
             </Table>
-            <AssignKonanDialog open={assignDialogOpen} shiftId={selectedShiftId}
-                                  onClose={() => setAssignDialogOpen(false)}/>
+            <AssignToShiftDialog
+                open={assignDialogOpen}
+                onClose={() => setAssignDialogOpen(false)}
+                shift={selectedShift}
+                itemList={itemList}
+                getItemName={getItemName}
+                assignFunction={assignHandler}
+            />
+
             <Menu
                 open={contextMenu !== null}
                 onClose={handleCloseContextMenu}
@@ -177,18 +186,19 @@ const ShiftTable: React.FC = observer(() => {
                     <ListItemIcon>
                         <PersonAddIcon fontSize="small"/>
                     </ListItemIcon>
-                    <ListItemText>Assign Konan</ListItemText>
+                    <ListItemText>שבץ כונן</ListItemText>
                 </MenuItem>
                 <MenuItem onClick={handleRemoveKonan}
-                          disabled={!contextMenu?.shiftId || !shifts.find(s => s.id === contextMenu.shiftId)?.konanId}>
+                          disabled={!contextMenu?.shift || !assignedShifts.find(s => sameShift(s, contextMenu.shift!))?.konanId}>
                     <ListItemIcon>
                         <PersonRemoveIcon fontSize="small"/>
                     </ListItemIcon>
-                    <ListItemText>Remove Konan</ListItemText>
+                    <ListItemText>הסר כונן משובץ</ListItemText>
                 </MenuItem>
             </Menu>
         </TableContainer>
     );
-});
+}
 
-export default ShiftTable;
+const ObserverShiftTable = observer(ShiftTable) as typeof ShiftTable;
+export default ObserverShiftTable;

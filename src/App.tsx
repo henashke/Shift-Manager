@@ -102,7 +102,7 @@ const App: React.FC = observer(() => {
                         </IconButton>
                     )}
                     {authStore.username && (
-                        <Box sx={{ ml: 2, display: 'flex', alignItems: 'center' }}>
+                        <Box sx={{ direction: 'rtl', ml: 2, display: 'flex', alignItems: 'center' }}>
                             <Tooltip title="אפשרויות משתמש">
                                 <Typography
                                     sx={{

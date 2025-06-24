@@ -13,30 +13,67 @@ export type Constraint = {
 
 class ConstraintStore {
     constraints: Constraint[] = [];
+    pendingConstraints: Constraint[] = [];
 
     constructor() {
         makeAutoObservable(this);
+        this.fetchConstraint()
     }
 
-    async addConstraint(constraint: Constraint) {
+    addConstraintPending(constraint: Constraint) {
+        this.pendingConstraints = this.pendingConstraints.filter(c =>
+            !(c.userId === constraint.userId && sameShift(c.shift, constraint.shift))
+        );
+        this.pendingConstraints.push(constraint);
+    }
+
+    removeConstraintPending(shift: Shift, userId: string): boolean {
+        const initialSize = this.pendingConstraints.length;
+        this.pendingConstraints = this.pendingConstraints.filter(c =>
+            !(c.userId === userId && sameShift(c.shift, shift))
+        );
+        return initialSize !== this.pendingConstraints.length;
+    }
+
+    savePendingConstraints = async () => {
+        if (this.pendingConstraints.length === 0) return;
         const url = `${config.API_BASE_URL}/constraints`;
-        console.log('Adding constraint:', constraint);
         try {
             const res = await fetch(url, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(constraint)
+                body: JSON.stringify(this.pendingConstraints)
             });
             if (res.ok) {
-                this.constraints.push(constraint);
+                this.mergePendingToConstraints();
             }
         } catch (e) {
-            console.error('Failed to add constraint to server', e);
+            console.error('Failed to save pending constraints', e);
         }
     }
 
+    mergePendingToConstraints() {
+        this.pendingConstraints.forEach(pending => {
+            const idx = this.constraints.findIndex(c =>
+                c.userId === pending.userId && sameShift(c.shift, pending.shift)
+            );
+            if (idx !== -1) {
+                this.constraints[idx] = pending;
+            } else {
+                this.constraints.push(pending);
+            }
+        });
+        this.pendingConstraints = [];
+    }
+
+    get hasPendingConstraints() {
+        return this.pendingConstraints.length > 0;
+    }
     async removeConstraint(shift: Shift) {
-        console.log('Removing constraint for shift:', shift);
+        const removedFromPendingConstraints = this.removeConstraintPending(shift, authStore.username!);
+        if (removedFromPendingConstraints) {
+            return
+        }
         const url = `${config.API_BASE_URL}/constraints`;
         try {
             const res = await fetch(url, {

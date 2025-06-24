@@ -117,7 +117,6 @@ function ShiftTable<T>({
 
     const handleRemoveItem = () => {
         if (contextMenu?.shift) {
-            console.log('Removing item from shift:', contextMenu.shift);
             unassignHandler?.(contextMenu.shift);
         }
         handleCloseContextMenu();

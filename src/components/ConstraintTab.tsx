@@ -42,11 +42,7 @@ const ConstraintTab: React.FC = observer(() => {
                 fromShift: Shift
             } = JSON.parse(data);
             if (userId && !sameShift(fromShift, shift)) {
-                constraintStore.addConstraint({
-                    userId: userId,
-                    shift: shift,
-                    constraintType: constraintType
-                });
+                assignConstraint(shift, constraintType);
             }
         } catch (error) {
             console.error('Failed to parse data from drag event:', data, error);
@@ -72,7 +68,7 @@ const ConstraintTab: React.FC = observer(() => {
     };
 
     const assignConstraint = (shift: Shift, constraintType: ConstraintType) => {
-        constraintStore.addConstraint({
+        constraintStore.addConstraintPending({
             constraintType: constraintType,
             shift: shift,
             userId: authStore.username!
@@ -86,18 +82,39 @@ const ConstraintTab: React.FC = observer(() => {
         }, shift))?.constraintType;
     };
 
+    const createAllConstraintsArray = () => {
+        return constraintStore.constraints
+            .map((c: Constraint) => ({type: c.shift.type, date: c.shift.date}))
+            .concat(constraintStore.pendingConstraints
+                .map((c: Constraint) => ({type: c.shift.type, date: c.shift.date})))
+    }
+
+    const getPendingConstraintTypeFromShift = (shift: Shift): ConstraintType | undefined => {
+        return constraintStore.pendingConstraints.find(c => c.userId === authStore.username && sameShift({
+            date: c.shift.date,
+            type: c.shift.type
+        }, shift))?.constraintType;
+    }
+
     return (
         <Container maxWidth="lg" dir="rtl">
             <CalendarNavigation/>
             <ShiftTable itemList={constraintTypes}
-                        assignedShifts={constraintStore.constraints.map((c: Constraint) => ({type: c.shift.type, date: c.shift.date}))}
+                        assignedShifts={createAllConstraintsArray()}
                         retrieveItemFromShift={retreiveConstraintFromShift}
                         assignHandler={assignConstraint}
                         unassignHandler={(shift: Shift) => constraintStore.removeConstraint(shift)}
                         getItemName={(item: ConstraintType) => item.toString()}
+                        pendingItem={getPendingConstraintTypeFromShift}
                         onDragStartHandler={onAssignedConstraintDragStart}
                         onDragEndHandler={onDragEnd}
-                        onDropHandler={handleShiftTableDrop}/>
+                        onDropHandler={handleShiftTableDrop}
+                        isPendingItems={constraintStore.pendingConstraints.length > 0}
+                        onSave={constraintStore.savePendingConstraints}
+                        onCancel={() => {
+                            constraintStore.pendingConstraints = [];
+                        }}
+            />
             <DraggableList
                 items={constraintTypes}
                 getKey={item => item}

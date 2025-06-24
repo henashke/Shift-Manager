@@ -67,12 +67,6 @@ function ShiftTable<T>({
         shift: Shift | null
     } | null>(null);
 
-    useEffect(() => {
-        usersStore.fetchUsers();
-        shiftStore.fetchShifts();
-        constraintStore.fetchConstraint();
-    }, []);
-
     const onDrop = (e: React.DragEvent, shift: Shift) => {
         onDropHandler?.(e, shift);
     };
@@ -148,11 +142,11 @@ function ShiftTable<T>({
                             <TableCell></TableCell>
                             {weekDates.map((date, i) => (
                                 <TableCell key={i} align="center">
-                                    <div className="calendar-day">{days[date.getDay()]}</div>
-                                    <div className="calendar-date">{date.toLocaleDateString('he-IL', {
+                                    <Typography variant={"h6"}>{days[date.getDay()]}</Typography>
+                                    <Typography>{date.toLocaleDateString('he-IL', {
                                         day: '2-digit',
                                         month: '2-digit'
-                                    })}</div>
+                                    })}</Typography>
                                 </TableCell>
                             ))}
                         </TableRow>
@@ -160,7 +154,11 @@ function ShiftTable<T>({
                     <TableBody>
                         {shiftTypes.map(shiftType => (
                             <TableRow key={shiftType}>
-                                <TableCell sx={{fontWeight: 600}}>{shiftType}</TableCell>
+                                <TableCell>
+                                    <Typography variant={"body1"}>
+                                        {shiftType}
+                                    </Typography>
+                                </TableCell>
                                 {weekDates.map((date) => {
                                     const shift = {date: date, type: shiftType};
                                     const item = getPendingOrAssignedItem(shift);
@@ -197,7 +195,7 @@ function ShiftTable<T>({
                                                     {getItemName(item)}
                                                 </Box>
                                             ) : (
-                                                <Typography variant="caption" sx={{color: '#7d7bf2'}}>כונן
+                                                <Typography variant="body1" sx={{color: '#7d7bf2'}}>כונן
                                                     משובץ</Typography>
                                             )}
                                         </TableCell>

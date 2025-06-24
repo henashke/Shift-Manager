@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import CalendarNavigation from './CalendarNavigation';
 import ShiftTable from './ShiftTable';
 import UserList from './UserList';
@@ -8,13 +8,18 @@ import shiftStore, {sameShift, Shift, User} from "../stores/ShiftStore";
 import {observer} from 'mobx-react-lite';
 
 const AssignmentTab: React.FC = observer(() => {
-    const { users } = usersStore;
+    const {users} = usersStore;
     const [isDragged, setIsDragged] = useState(false);
+
+    useEffect(() => {
+        usersStore.fetchUsers();
+        shiftStore.fetchShifts();
+    }, []);
 
 
     const onDragStart = (e: React.DragEvent, user: User, fromShift?: Shift) => {
         setIsDragged(true);
-        e.dataTransfer.setData('application/json', JSON.stringify({ user: user, fromShift: fromShift || null }));
+        e.dataTransfer.setData('application/json', JSON.stringify({user: user, fromShift: fromShift || null}));
     };
 
     const onDragEnd = () => {
@@ -26,9 +31,9 @@ const AssignmentTab: React.FC = observer(() => {
         const data = e.dataTransfer.getData('application/json');
         if (!data) return;
         try {
-            const { user, fromShift }: { user: User, fromShift: Shift } = JSON.parse(data);
+            const {user, fromShift}: { user: User, fromShift: Shift } = JSON.parse(data);
             if (user && !sameShift(fromShift, shift)) {
-                shiftStore.assignShiftPending({ ...shift, userId: user.id });
+                shiftStore.assignShiftPending({...shift, userId: user.id});
             }
         } catch (e) {
             console.error("Failed to parse data from drag event:", data, e);
@@ -50,7 +55,7 @@ const AssignmentTab: React.FC = observer(() => {
             <ShiftTable onDropHandler={handleDrop}
                         onDragStartHandler={onDragStart}
                         onDragEndHandler={onDragEnd}
-                        assignHandler={(shift, user) => shiftStore.assignShiftPending({ ...shift, userId: user.id })}
+                        assignHandler={(shift, user) => shiftStore.assignShiftPending({...shift, userId: user.id})}
                         unassignHandler={shift => shiftStore.unassignUser(shift)}
                         pendingItem={getPendingUserFromShift}
                         retrieveItemFromShift={getUserFromShift}

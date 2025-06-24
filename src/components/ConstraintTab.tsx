@@ -1,18 +1,28 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {observer} from 'mobx-react-lite';
 import CalendarNavigation from './CalendarNavigation';
 import DraggableList from './DraggableList';
 import {ConstraintType} from './ConstraintTypeList';
 import ShiftTable from './ShiftTable';
 import {Container} from "@mui/material";
-import {sameShift, Shift} from '../stores/ShiftStore';
+import {sameShift, Shift, User} from '../stores/ShiftStore';
 import authStore from "../stores/AuthStore";
 import {Constraint, constraintStore} from "../stores/ConstraintStore";
+import usersStore from "../stores/UsersStore";
+import AddUserDialog from "./AddUserDialog";
+import EditUser from "./dialogs/EditUser";
+import DeleteUser from "./dialogs/DeleteUser";
+import UserInfoDialog from "./UserInfoDialog";
 
 const constraintTypes = [ConstraintType.CANT, ConstraintType.PREFERS_NOT, ConstraintType.PREFERS];
 
 const ConstraintTab: React.FC = observer(() => {
     const [isDragged, setIsDragged] = useState(false);
+
+    useEffect(() => {
+        usersStore.fetchUsers();
+        constraintStore.fetchConstraint();
+    }, []);
 
     const onAssignedConstraintDragStart = (e: React.DragEvent, type: ConstraintType, fromShift?: Shift) => {
         setIsDragged(true);
@@ -97,7 +107,7 @@ const ConstraintTab: React.FC = observer(() => {
     }
 
     return (
-        <Container maxWidth="lg" dir="rtl">
+        <Container maxWidth={"xl"} dir="rtl">
             <CalendarNavigation/>
             <ShiftTable itemList={constraintTypes}
                         assignedShifts={createAllConstraintsArray()}
@@ -123,6 +133,22 @@ const ConstraintTab: React.FC = observer(() => {
                 onDrop={handleDeleteAreaOnDrop}
                 isDragged={isDragged}
             />
+            <EditUser handleConfirm={function(user: User): void {
+                throw new Error('Function not implemented.');
+            } } open={false} handleDialogClose={function(): void {
+                throw new Error('Function not implemented.');
+            } } />
+            <DeleteUser handleConfirm={function (userToDeleteId: string): void {
+                throw new Error('Function not implemented.');
+            }} open={false} handleDialogClose={function (): void {
+                throw new Error('Function not implemented.');
+            }}                />
+            <AddUserDialog open={false} onClose={function(): void {
+                throw new Error('Function not implemented.');
+            } } />
+            <UserInfoDialog open={false} user={undefined} onClose={function(): void {
+                throw new Error('Function not implemented.');
+            } } />
         </Container>
     );
 });

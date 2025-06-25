@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useState} from 'react';
 import {observer} from 'mobx-react-lite';
 import {
     Box,
@@ -15,13 +15,10 @@ import {
     TableRow,
     Typography
 } from '@mui/material';
-import store from '../stores/ShiftStore';
-import shiftStore, {sameShift, Shift} from '../stores/ShiftStore';
-import usersStore from '../stores/UsersStore';
+import store, {sameShift, Shift} from '../stores/ShiftStore';
 import AssignToShiftDialog from './AssignToShiftDialog';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import PersonRemoveIcon from '@mui/icons-material/PersonRemove';
-import {constraintStore} from "../stores/ConstraintStore";
 import ShiftTableActions from './ShiftTableActions';
 
 const days = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];

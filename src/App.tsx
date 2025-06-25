@@ -2,7 +2,6 @@ import React, {useState} from 'react';
 import {
     AppBar,
     Box,
-    Container,
     CssBaseline,
     IconButton,
     Menu,
@@ -23,6 +22,7 @@ import authStore from './stores/AuthStore';
 import LogoutDialog from './components/dialogs/LogoutDialog';
 import ConstraintTab from './components/ConstraintTab';
 import AssignmentTab from './components/AssignmentTab';
+import SettingsTab from './components/SettingsTab';
 
 const App: React.FC = observer(() => {
     const [darkMode, setDarkMode] = useState(true);
@@ -30,6 +30,7 @@ const App: React.FC = observer(() => {
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [tabValue, setTabValue] = useState(() => {
         if (window.location.pathname.startsWith('/constraints')) return 1;
+        if (window.location.pathname.startsWith('/settings')) return 2;
         return 0;
     });
     const menuOpen = Boolean(anchorEl);
@@ -70,6 +71,7 @@ const App: React.FC = observer(() => {
         setTabValue(newValue);
         if (newValue === 0) navigate('/');
         if (newValue === 1) navigate('/constraints');
+        if (newValue === 2) navigate('/settings');
     };
 
     return (
@@ -95,6 +97,7 @@ const App: React.FC = observer(() => {
                                   indicatorColor="secondary">
                                 <Tab label="שיבוצים"/>
                                 <Tab label="אילוצים"/>
+                                <Tab label="הגדרות"/>
                             </Tabs>
                         </Box>
                     </Box>
@@ -150,6 +153,7 @@ const App: React.FC = observer(() => {
             <Routes>
                 <Route path="/login" element={<LoginSignup/>}/>
                 <Route path="/constraints" element={<ConstraintTab/>}/>
+                <Route path="/settings" element={<SettingsTab/>}/>
                 <Route path="/" element={<AssignmentTab/>}/>
             </Routes>
         </ThemeProvider>

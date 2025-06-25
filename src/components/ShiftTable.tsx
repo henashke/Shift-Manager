@@ -13,12 +13,12 @@ import {
     TableContainer,
     TableHead,
     TableRow,
-    Typography
+    Typography,
 } from '@mui/material';
 import store, {sameShift, Shift} from '../stores/ShiftStore';
 import AssignToShiftDialog from './AssignToShiftDialog';
-import PersonAddIcon from '@mui/icons-material/PersonAdd';
-import PersonRemoveIcon from '@mui/icons-material/PersonRemove';
+import AddIcon from '@mui/icons-material/Add';
+import RemoveIcon from '@mui/icons-material/Remove';
 import ShiftTableActions from './ShiftTableActions';
 
 const days = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
@@ -38,6 +38,7 @@ interface ShiftTableProps<T> {
     onDropHandler?: (e: React.DragEvent, shift: Shift) => void;
     onDragEndHandler?: () => void;
     onDragStartHandler?: (e: React.DragEvent, draggedElement: T, fromShift?: Shift) => void;
+    itemName?: string;
 }
 
 function ShiftTable<T>({
@@ -53,7 +54,8 @@ function ShiftTable<T>({
                            pendingItem,
                            onDropHandler,
                            onDragStartHandler,
-                           onDragEndHandler
+                           onDragEndHandler,
+                           itemName
                        }: ShiftTableProps<T>) {
     const {weekDates} = store;
     const [assignDialogOpen, setAssignDialogOpen] = useState(false);
@@ -123,7 +125,7 @@ function ShiftTable<T>({
     };
 
     return (
-        <Box sx={{display: 'flex', gap: 2, height: '100%'}}>
+        <Box sx={{display: 'flex', gap: 2, height: '100%', mb: 4}}>
             {
                 isPendingItems && onSave && onCancel &&
                 <ShiftTableActions
@@ -223,16 +225,16 @@ function ShiftTable<T>({
                 >
                     <MenuItem onClick={handleAssignUser}>
                         <ListItemIcon>
-                            <PersonAddIcon fontSize="small"/>
+                            <AddIcon fontSize="small"/>
                         </ListItemIcon>
-                        <ListItemText>שבץ כונן</ListItemText>
+                        <ListItemText>הוסף {itemName}</ListItemText>
                     </MenuItem>
                     <MenuItem onClick={handleRemoveItem}
                               disabled={!contextMenu?.shift || !assignedShifts.find(s => sameShift(s, contextMenu.shift!))}>
                         <ListItemIcon>
-                            <PersonRemoveIcon fontSize="small"/>
+                            <RemoveIcon fontSize="small"/>
                         </ListItemIcon>
-                        <ListItemText>הסר כונן משובץ</ListItemText>
+                        <ListItemText>הסר {itemName}</ListItemText>
                     </MenuItem>
                 </Menu>
             </TableContainer>

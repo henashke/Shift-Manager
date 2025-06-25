@@ -4,21 +4,17 @@ import CalendarNavigation from './CalendarNavigation';
 import DraggableList from './DraggableList';
 import {ConstraintType} from './ConstraintTypeList';
 import ShiftTable from './ShiftTable';
-import {Container} from "@mui/material";
+import {Box, Container, FormControl, MenuItem, Select, Typography} from "@mui/material";
 import {sameShift, Shift, User} from '../stores/ShiftStore';
 import authStore from "../stores/AuthStore";
 import {Constraint, constraintStore} from "../stores/ConstraintStore";
 import usersStore from "../stores/UsersStore";
-import AddUserDialog from "./AddUserDialog";
-import EditUser from "./dialogs/EditUser";
-import DeleteUser from "./dialogs/DeleteUser";
-import UserInfoDialog from "./UserInfoDialog";
 
 const constraintTypes = [ConstraintType.CANT, ConstraintType.PREFERS_NOT, ConstraintType.PREFERS];
 
 const ConstraintTab: React.FC = observer(() => {
     const [isDragged, setIsDragged] = useState(false);
-
+    const [selectedUser, setSelectedUser] = useState<string>(authStore.username || '');
     useEffect(() => {
         usersStore.fetchUsers();
         constraintStore.fetchConstraint();
@@ -31,7 +27,7 @@ const ConstraintTab: React.FC = observer(() => {
 
     const setDragData = (e: React.DragEvent, type: ConstraintType, fromShift?: Shift) => {
         e.dataTransfer.setData('application/json', JSON.stringify({
-            userId: authStore.username,
+            userId: selectedUser,
             constraintType: type,
             fromShift: fromShift || null
         }));
@@ -81,12 +77,12 @@ const ConstraintTab: React.FC = observer(() => {
         constraintStore.addConstraintPending({
             constraintType: constraintType,
             shift: shift,
-            userId: authStore.username!
+            userId: selectedUser
         });
     }
 
-    const retreiveConstraintFromShift = (shift: Shift): ConstraintType | undefined => {
-        return constraintStore.constraints.find(c => c.userId === authStore.username && sameShift({
+    const retrieveConstraintFromShift = (shift: Shift): ConstraintType | undefined => {
+        return constraintStore.constraints.find(c => c.userId === selectedUser && sameShift({
             date: c.shift.date,
             type: c.shift.type
         }, shift))?.constraintType;
@@ -100,7 +96,7 @@ const ConstraintTab: React.FC = observer(() => {
     }
 
     const getPendingConstraintTypeFromShift = (shift: Shift): ConstraintType | undefined => {
-        return constraintStore.pendingConstraints.find(c => c.userId === authStore.username && sameShift({
+        return constraintStore.pendingConstraints.find(c => c.userId === selectedUser && sameShift({
             date: c.shift.date,
             type: c.shift.type
         }, shift))?.constraintType;
@@ -111,7 +107,7 @@ const ConstraintTab: React.FC = observer(() => {
             <CalendarNavigation/>
             <ShiftTable itemList={constraintTypes}
                         assignedShifts={createAllConstraintsArray()}
-                        retrieveItemFromShift={retreiveConstraintFromShift}
+                        retrieveItemFromShift={retrieveConstraintFromShift}
                         assignHandler={assignConstraint}
                         unassignHandler={(shift: Shift) => constraintStore.removeConstraint(shift)}
                         getItemName={(item: ConstraintType) => item.toString()}
@@ -124,31 +120,30 @@ const ConstraintTab: React.FC = observer(() => {
                         onCancel={() => {
                             constraintStore.pendingConstraints = [];
                         }}
+                        itemName="אילוץ"
             />
-            <DraggableList
-                items={constraintTypes}
-                getKey={item => item}
-                getLabel={item => item}
-                onDragStart={setDragData}
-                onDrop={handleDeleteAreaOnDrop}
-                isDragged={isDragged}
-            />
-            <EditUser handleConfirm={function(user: User): void {
-                throw new Error('Function not implemented.');
-            } } open={false} handleDialogClose={function(): void {
-                throw new Error('Function not implemented.');
-            } } />
-            <DeleteUser handleConfirm={function (userToDeleteId: string): void {
-                throw new Error('Function not implemented.');
-            }} open={false} handleDialogClose={function (): void {
-                throw new Error('Function not implemented.');
-            }}                />
-            <AddUserDialog open={false} onClose={function(): void {
-                throw new Error('Function not implemented.');
-            } } />
-            <UserInfoDialog open={false} user={undefined} onClose={function(): void {
-                throw new Error('Function not implemented.');
-            } } />
+            <Box sx={{display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 2}}>
+                <FormControl size="small" sx={{minWidth: 160, display: 'flex'}}>
+                    <Typography variant="h6">משבץ אילוצים עבור:</Typography>
+                    <Select
+                        labelId="user-select-label"
+                        value={selectedUser}
+                        onChange={e => setSelectedUser(e.target.value)}
+                    >
+                        {usersStore.users.map((user: User) => (
+                            <MenuItem key={user.id} value={user.name}>{user.name}</MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+                <DraggableList
+                    items={constraintTypes}
+                    getKey={item => item}
+                    getLabel={item => item}
+                    onDragStart={setDragData}
+                    onDrop={handleDeleteAreaOnDrop}
+                    isDragged={isDragged}
+                />
+            </Box>
         </Container>
     );
 });

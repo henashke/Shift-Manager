@@ -78,7 +78,8 @@ const App: React.FC = observer(() => {
             <AppBar position="static" color="primary" sx={{mb: 4}}>
                 <Toolbar sx={{justifyContent: 'space-between'}}>
                     <Box sx={{display: 'flex', alignItems: 'center', flex: 1}}>
-                        <Typography variant="h5" fontWeight={800} color="inherit" sx={{textShadow: '0 2px 16px #222a, 0 1px 0 #2228'}}>
+                        <Typography variant="h5" fontWeight={800} color="inherit"
+                                    sx={{textShadow: '0 2px 16px #222a, 0 1px 0 #2228'}}>
                             כוננים
                         </Typography>
                         <IconButton
@@ -89,10 +90,11 @@ const App: React.FC = observer(() => {
                         >
                             {darkMode ? <LightMode sx={{color: '#ffe066'}}/> : <DarkMode sx={{color: '#23272f'}}/>}
                         </IconButton>
-                        <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-                            <Tabs value={tabValue} onChange={handleTabChange} textColor="inherit" indicatorColor="secondary">
-                                <Tab label="שיבוצים" />
-                                <Tab label="אילוצים" />
+                        <Box sx={{flex: 1, display: 'flex', justifyContent: 'center'}}>
+                            <Tabs value={tabValue} onChange={handleTabChange} textColor="inherit"
+                                  indicatorColor="secondary">
+                                <Tab label="שיבוצים"/>
+                                <Tab label="אילוצים"/>
                             </Tabs>
                         </Box>
                     </Box>
@@ -102,7 +104,7 @@ const App: React.FC = observer(() => {
                         </IconButton>
                     )}
                     {authStore.username && (
-                        <Box sx={{ direction: 'rtl', ml: 2, display: 'flex', alignItems: 'center' }}>
+                        <Box sx={{direction: 'rtl', ml: 2, display: 'flex', alignItems: 'center'}}>
                             <Tooltip title="אפשרויות משתמש">
                                 <Typography
                                     sx={{
@@ -124,10 +126,13 @@ const App: React.FC = observer(() => {
                                 anchorEl={anchorEl}
                                 open={menuOpen}
                                 onClose={() => setAnchorEl(null)}
-                                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                                anchorOrigin={{vertical: 'bottom', horizontal: 'right'}}
+                                transformOrigin={{vertical: 'top', horizontal: 'right'}}
                             >
-                                <MenuItem onClick={() => { setAnchorEl(null); setLogoutOpen(true); }}>יציאה</MenuItem>
+                                <MenuItem onClick={() => {
+                                    setAnchorEl(null);
+                                    setLogoutOpen(true);
+                                }}>יציאה</MenuItem>
                             </Menu>
                         </Box>
                     )}
@@ -143,9 +148,9 @@ const App: React.FC = observer(() => {
                 </Toolbar>
             </AppBar>
             <Routes>
-                <Route path="/login" element={<LoginSignup />} />
-                <Route path="/constraints" element={<Container maxWidth="md" dir="rtl"><ConstraintTab /></Container>} />
-                <Route path="/" element={<AssignmentTab />} />
+                <Route path="/login" element={<LoginSignup/>}/>
+                <Route path="/constraints" element={<ConstraintTab/>}/>
+                <Route path="/" element={<AssignmentTab/>}/>
             </Routes>
         </ThemeProvider>
     );

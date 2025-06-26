@@ -1,12 +1,11 @@
-import {makeAutoObservable, runInAction} from 'mobx';
+import {makeAutoObservable, runInAction} from "mobx";
 import config from "../config";
 
-
 export interface User {
-    id: string;
     name: string;
     score: number;
 }
+
 export type ShiftType = 'יום' | 'לילה';
 
 export interface Shift {
@@ -14,8 +13,8 @@ export interface Shift {
     type: ShiftType;
 }
 
-export interface AssignedShift extends Shift{
-    userId: string;
+export interface AssignedShift extends Shift {
+    assignedUsername: string;
 }
 
 export class ShiftStore {
@@ -67,21 +66,6 @@ export class ShiftStore {
             console.error(error);
         }
     };
-
-    assignUser = (shift: Shift, userId: string) => {
-        const assignedShift = this.assignedShifts.find(assignedShift => sameShift(assignedShift, shift));
-        if (assignedShift) {
-            assignedShift.userId = userId;
-            return;
-        }
-        this.assignedShifts.filter(s => !sameShift(s, shift)); //remove any existing shift with the same date and type
-        const newShift: AssignedShift = {
-            ...shift,
-            userId: userId,
-        };
-        this.assignedShifts.push(newShift);
-    };
-
     unassignUser = async (shift: Shift) => {
         const pendingShiftToUnassign = this.pendingAssignedShifts.find(s => sameShift(s, shift));
         if (pendingShiftToUnassign) {
@@ -173,13 +157,46 @@ export class ShiftStore {
         }
     };
 
+    // Suggest shift assignments for selected users
+    async suggestShiftAssignments(userIds: string[], startDate: Date, endDate: Date) {
+        this.loading = true;
+        try {
+            const response = await fetch(`${config.API_BASE_URL}/shifts/suggest`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({userIds, startDate, endDate}),
+            });
+            if (!response.ok) throw new Error('Failed to suggest shifts');
+            const data = await response.json();
+            console.log(data)
+            runInAction(() => {
+                console.log("hazara mehaserver")
+                this.pendingAssignedShifts = data.map((shift: any) => {
+                    console.log("shift: ", shift)
+                    return ({
+                        date: new Date(shift.date),
+                        type: shift.type,
+                        assignedUsername: shift.userId || ''
+                    })
+                });
+                this.loading = false;
+            });
+        } catch (error) {
+            runInAction(() => {
+                this.loading = false;
+            });
+            console.error(error);
+        }
+    }
+
     get hasPendingAssignments() {
         return this.pendingAssignedShifts.length > 0;
     }
 }
 
 const store = new ShiftStore();
-export default store;
 export const sameShift = (shift1: Shift, shift2: Shift) => {
     if (!shift1 || !shift2) return false;
     const date1 = new Date(shift1.date);
@@ -191,3 +208,4 @@ export const sameShift = (shift1: Shift, shift2: Shift) => {
         shift1.type === shift2.type
     );
 }
+export default store;

@@ -1,7 +1,7 @@
 import React, {useState} from 'react';
 import {observer} from 'mobx-react-lite';
 import usersStore from '../stores/UsersStore';
-import shiftStore, {User, Shift} from '../stores/ShiftStore';
+import shiftStore, {Shift, User} from '../stores/ShiftStore';
 import AddUserDialog from './AddUserDialog';
 import DeleteUser from "./dialogs/DeleteUser";
 import UserInfoDialog from "./UserInfoDialog";
@@ -70,7 +70,7 @@ const UserList: React.FC<{ isDragged?: boolean }> = observer(({ isDragged }) => 
         <>
             <DraggableList
                 items={users}
-                getKey={u => u.id}
+                getKey={u => u.name}
                 getLabel={u => u.name}
                 onDragStart={onDragStart}
                 onDrop={deleteAreaOnDropHandler}

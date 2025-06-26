@@ -1,4 +1,4 @@
-import { makeAutoObservable, runInAction } from 'mobx';
+import {makeAutoObservable, runInAction} from 'mobx';
 import config from '../config';
 
 export interface User {
@@ -30,10 +30,6 @@ class UserStore {
         this.loading = false;
       });
     }
-  };
-
-  getUserById = (id: string) => {
-    return this.users.find(u => u.id === id);
   };
 }
 

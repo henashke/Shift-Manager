@@ -1,7 +1,8 @@
 import React from 'react';
-import { Dialog, DialogTitle, DialogContent, Typography, Box, Avatar, useTheme, IconButton } from '@mui/material';
+import {Avatar, Box, Dialog, DialogContent, DialogTitle, IconButton, Typography, useTheme} from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import { User } from '../stores/ShiftStore';
+
+import {User} from "../stores/ShiftStore";
 
 interface UserInfoDialogProps {
   open: boolean;
@@ -30,7 +31,7 @@ const UserInfoDialog: React.FC<UserInfoDialogProps> = ({ open, user, onClose }) 
         </Typography>
         <Box sx={{ width: '100%', mt: 2 }}>
           <Typography variant="subtitle1" color="text.secondary">
-            מזהה: <b>{user.id}</b>
+            מזהה: <b>{user.name}</b>
           </Typography>
           <Typography variant="subtitle1" color="text.secondary">
             ניקוד: <b>{user.score}</b>

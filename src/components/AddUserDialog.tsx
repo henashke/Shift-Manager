@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { observer } from 'mobx-react-lite';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField } from '@mui/material';
-import store from '../stores/ShiftStore';
+import React, {useState} from 'react';
+import {observer} from 'mobx-react-lite';
+import {Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField} from '@mui/material';
+
+import store from "../stores/ShiftStore";
 
 interface AddUserDialogProps {
   open: boolean;

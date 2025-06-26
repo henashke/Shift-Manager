@@ -17,9 +17,9 @@ import {
     TextField
 } from '@mui/material';
 import {observer} from 'mobx-react-lite';
-import {ShiftType} from '../stores/ShiftStore';
 import shiftWeightStore, {ShiftWeight} from '../stores/ShiftWeightStore';
 import PresetNameDialog from './dialogs/PresetNameDialog';
+import {ShiftType} from "../stores/ShiftStore";
 
 const daysOfWeek = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 const shiftTypes: ShiftType[] = ['יום', 'לילה'];
@@ -132,7 +132,7 @@ const SettingsTab: React.FC = observer(() => {
         <Container maxWidth="xl" dir="rtl" sx={{height: '100vh', mt: 4}}>
             <Box sx={{mb: 3, display: 'flex', alignItems: 'center', gap: 2}}>
                 <span style={{fontWeight: 700, fontSize: '1.2em'}}>מציג פריסט:</span>
-                <FormControl size="small">
+                <FormControl size="small" sx={{minWidth: 200}}>
                     <Select
                         value={preset}
                         onChange={handlePresetSelect}
@@ -151,7 +151,7 @@ const SettingsTab: React.FC = observer(() => {
                 )}
                 {showMakeDefaultButton && preset && (
                     <Button
-                        variant="outlined"
+                        variant="contained"
                         color="primary"
                         onClick={handleMakeDefault}
                         sx={{ml: 2}}

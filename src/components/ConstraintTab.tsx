@@ -131,7 +131,7 @@ const ConstraintTab: React.FC = observer(() => {
                         onChange={e => setSelectedUser(e.target.value)}
                     >
                         {usersStore.users.map((user: User) => (
-                            <MenuItem key={user.id} value={user.name}>{user.name}</MenuItem>
+                            <MenuItem key={user.name} value={user.name}>{user.name}</MenuItem>
                         ))}
                     </Select>
                 </FormControl>

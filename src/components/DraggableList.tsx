@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {Box, Paper, Menu, MenuItem} from '@mui/material';
+import {Box, Menu, MenuItem, Paper} from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 
 interface DraggableListProps<T> {
@@ -48,7 +48,7 @@ function DraggableList<T>({
     };
 
     return (
-        <Paper sx={{mt: 4, p: 2, borderRadius: 2, position: 'relative'}}>
+        <Paper sx={{p: 2, borderRadius: 2, position: 'relative', flexGrow: 1}}>
             {isDragged && onDrop ? (
                 <Box
                     onDragOver={handleDragOver}

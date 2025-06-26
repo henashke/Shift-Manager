@@ -36,9 +36,6 @@ class ShiftWeightStore {
             if (!res.ok) throw new Error('Failed to fetch shift weight presets');
             const data = await res.json();
             runInAction(() => {
-                console.log(data.presets);
-                console.log(Object.entries(data.presets))
-                console.log(new Map(Object.entries(data.presets)))
                 this.presets = new Map(Object.entries(data.presets));
                 this.currentPreset = data.currentPreset;
                 this.loading = false;

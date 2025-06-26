@@ -24,22 +24,13 @@ import PresetNameDialog from './dialogs/PresetNameDialog';
 const daysOfWeek = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 const shiftTypes: ShiftType[] = ['יום', 'לילה'];
 
-// Initial state: { [day]: { [shiftType]: string } }
-const getDefaultSettings = () => {
-    const settings: Record<string, Record<ShiftType, string>> = {};
-    daysOfWeek.forEach(day => {
-        settings[day] = {'יום': '0', 'לילה': '0'};
-    });
-    return settings;
-};
-
 const SettingsTab: React.FC = observer(() => {
     const [preset, setPreset] = useState<string>('');
     const [settings, setSettings] = useState<Record<string, Record<ShiftType, string>>>({});
     const [presetNameDialogOpen, setPresetNameDialogOpen] = useState(false);
 
     useEffect(() => {
-        // On first render, select the currentPreset from the store if available
+        shiftWeightStore.fetchPresets();
         if (!preset && shiftWeightStore.currentPreset) {
             setPreset(shiftWeightStore.currentPreset);
         }

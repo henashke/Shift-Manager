@@ -6,6 +6,7 @@ import com.shiftmanagerserver.handlers.*;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.ext.web.Router;
+import io.vertx.ext.web.handler.StaticHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,6 +51,7 @@ public class MainVerticle extends AbstractVerticle {
     }
 
     private void bindRoutes(Router router) {
+        router.route("/*").handler(StaticHandler.create("webroot"));
         authHandler.addRoutes(router);
         userHandler.addRoutes(router);
         constraintHandler.addRoutes(router);

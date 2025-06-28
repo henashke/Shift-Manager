@@ -51,7 +51,7 @@ public class MainVerticle extends AbstractVerticle {
     }
 
     private void bindRoutes(Router router) {
-        router.route("/*").handler(StaticHandler.create("webroot"));
+        router.route("/*").handler(StaticHandler.create("static"));
         authHandler.addRoutes(router);
         userHandler.addRoutes(router);
         constraintHandler.addRoutes(router);

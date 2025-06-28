@@ -1,5 +1,5 @@
 import React from 'react';
-import { List, ListItem, ListItemButton, ListItemText } from '@mui/material';
+import {List, ListItem, ListItemButton, ListItemText} from '@mui/material';
 
 export enum ConstraintType {
   CANT = 'לא יכול',

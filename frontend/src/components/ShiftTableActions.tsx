@@ -1,5 +1,5 @@
 import React from 'react';
-import {Box, Button, Typography, Paper, Grow} from '@mui/material';
+import {Box, Button, Grow, Paper, Typography} from '@mui/material';
 
 interface ShiftTableActionsProps {
     onSave: () => void;

@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { Box, Button, Paper, Tab, Tabs, TextField, Typography, Alert } from '@mui/material';
-import { observer } from 'mobx-react-lite';
-import { useNavigate } from 'react-router-dom';
+import React, {useState} from 'react';
+import {Alert, Box, Button, Paper, Tab, Tabs, TextField, Typography} from '@mui/material';
+import {observer} from 'mobx-react-lite';
+import {useNavigate} from 'react-router-dom';
 import config from '../config';
 import authStore from '../stores/AuthStore';
 

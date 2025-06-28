@@ -1,6 +1,6 @@
 import React from 'react';
-import { observer } from 'mobx-react-lite';
-import { Box, Button, Typography } from '@mui/material';
+import {observer} from 'mobx-react-lite';
+import {Box, Button, Typography} from '@mui/material';
 import store from '../stores/ShiftStore';
 
 const CalendarNavigation: React.FC = observer(() => {

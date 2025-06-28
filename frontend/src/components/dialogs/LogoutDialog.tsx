@@ -1,5 +1,5 @@
 import React from 'react';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography } from '@mui/material';
+import {Button, Dialog, DialogActions, DialogContent, DialogTitle, Typography} from '@mui/material';
 
 interface LogoutDialogProps {
   open: boolean;

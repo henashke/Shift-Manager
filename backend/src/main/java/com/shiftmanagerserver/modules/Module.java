@@ -68,7 +68,7 @@ public class Module extends AbstractModule {
         
         // Redis configuration
         String redisUrl = System.getenv().getOrDefault("REDIS_URL", "redis://default:@gusc1-moving-tetra-32048.upstash.io:32048");
-        String redisToken = System.getenv().getOrDefault("REDIS_TOKEN", "AX0wASQgNDBhMTQ1ZGUtMGQxMy00ZTY3LTkyYWItZTI4NThjYzMxOWNiNDkyZWE1YTM3YjM5NDc0MzkyNzQzMTk3ZjU1NWEzNmM=");
+        String redisToken = System.getenv().getOrDefault("REDIS_TOKEN", "");
         String redisKeyPrefix = System.getenv().getOrDefault("REDIS_KEY_PREFIX", "shiftmanager");
         
         System.out.println("=== Redis Configuration Debug ===");

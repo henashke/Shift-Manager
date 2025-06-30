@@ -2,6 +2,7 @@ package com.shiftmanagerserver;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import com.shiftmanagerserver.dao.RedisConfig;
 import com.shiftmanagerserver.handlers.*;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
@@ -19,11 +20,18 @@ public class MainVerticle extends AbstractVerticle {
     private final AuthHandler authHandler;
     private final ShiftHandler shiftHandler;
     private final ShiftWeightSettingsHandler shiftWeightSettingsHandler;
+    private final String redisUrl;
+    private final String redisToken;
 
     @Inject
-    public MainVerticle(@Named("application.port") Integer port, Router router,
-                        UserHandler userHandler, AuthHandler authHandler, ConstraintHandler constraintHandler, ShiftHandler shiftHandler, ShiftWeightSettingsHandler shiftWeightSettingsHandler) {
+    public MainVerticle(@Named("application.port") Integer port, 
+                       @Named("redis.url") String redisUrl,
+                       @Named("redis.token") String redisToken,
+                       Router router,
+                       UserHandler userHandler, AuthHandler authHandler, ConstraintHandler constraintHandler, ShiftHandler shiftHandler, ShiftWeightSettingsHandler shiftWeightSettingsHandler) {
         this.port = port;
+        this.redisUrl = redisUrl;
+        this.redisToken = redisToken;
         this.userHandler = userHandler;
         this.authHandler = authHandler;
         this.constraintHandler = constraintHandler;
@@ -36,6 +44,17 @@ public class MainVerticle extends AbstractVerticle {
     @Override
     public void start(Promise<Void> startPromise) {
         logger.info("Starting Shift-Manager application...");
+        
+        // Initialize Redis
+        try {
+            RedisConfig.initialize(vertx, redisUrl, redisToken);
+            logger.info("Redis initialized with URL: {}", redisUrl);
+        } catch (Exception e) {
+            logger.error("Failed to initialize Redis", e);
+            startPromise.fail(e);
+            return;
+        }
+        
         bindRoutes(router);
         vertx.createHttpServer()
                 .requestHandler(router)
@@ -48,6 +67,12 @@ public class MainVerticle extends AbstractVerticle {
                         startPromise.fail(http.cause());
                     }
                 });
+    }
+
+    @Override
+    public void stop(Promise<Void> stopPromise) {
+        RedisConfig.close();
+        stopPromise.complete();
     }
 
     private void bindRoutes(Router router) {

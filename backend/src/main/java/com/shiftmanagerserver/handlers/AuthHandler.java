@@ -1,6 +1,7 @@
 package com.shiftmanagerserver.handlers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.inject.Inject;
 import com.shiftmanagerserver.entities.User;
 import com.shiftmanagerserver.service.UserService;
 import io.vertx.core.json.JsonObject;
@@ -14,9 +15,10 @@ public class AuthHandler implements Handler {
     private final UserService userService;
     private final ObjectMapper objectMapper;
 
-    public AuthHandler() {
-        this.userService = new UserService();
-        this.objectMapper = new ObjectMapper();
+    @Inject
+    public AuthHandler(UserService userService, ObjectMapper objectMapper) {
+        this.userService = userService;
+        this.objectMapper = objectMapper;
     }
 
     public void handleSignup(RoutingContext ctx) {
@@ -35,22 +37,28 @@ public class AuthHandler implements Handler {
                 return;
             }
 
-            boolean created = userService.createUser(user);
-            if (created) {
-                logger.info("User created successfully: {}", user.getName());
-                ctx.response()
-                        .setStatusCode(201)
-                        .putHeader("Content-Type", "application/json")
-                        .end(new JsonObject().put("message", "User created successfully").encode());
-            } else {
-                logger.warn("Username already exists: {}", user.getName());
-                ctx.response()
-                        .setStatusCode(409)
-                        .putHeader("Content-Type", "application/json")
-                        .end(new JsonObject().put("error", "Username already exists").encode());
-            }
+            userService.createUser(user)
+                .onSuccess(created -> {
+                    if (created) {
+                        logger.info("User created successfully: {}", user.getName());
+                        ctx.response()
+                                .setStatusCode(201)
+                                .putHeader("Content-Type", "application/json")
+                                .end(new JsonObject().put("message", "User created successfully").encode());
+                    } else {
+                        logger.warn("Username already exists: {}", user.getName());
+                        ctx.response()
+                                .setStatusCode(409)
+                                .putHeader("Content-Type", "application/json")
+                                .end(new JsonObject().put("error", "Username already exists").encode());
+                    }
+                })
+                .onFailure(err -> {
+                    logger.error("Error creating user", err);
+                    handleError(ctx, err);
+                });
         } catch (Exception e) {
-            logger.error("Error creating user", e);
+            logger.error("Error parsing signup data", e);
             handleError(ctx, e);
         }
     }
@@ -71,25 +79,31 @@ public class AuthHandler implements Handler {
                 return;
             }
 
-            boolean authenticated = userService.authenticateUser(credentials.getName(), credentials.getPassword());
-            if (authenticated) {
-                logger.info("User authenticated successfully: {}", credentials.getName());
-                ctx.response()
-                        .setStatusCode(200)
-                        .putHeader("Content-Type", "application/json")
-                        .end(new JsonObject()
-                                .put("message", "Login successful")
-                                .put("username", credentials.getName())
-                                .encode());
-            } else {
-                logger.warn("Authentication failed for user: {}", credentials.getName());
-                ctx.response()
-                        .setStatusCode(401)
-                        .putHeader("Content-Type", "application/json")
-                        .end(new JsonObject().put("error", "Invalid username or password").encode());
-            }
+            userService.authenticateUser(credentials.getName(), credentials.getPassword())
+                .onSuccess(authenticated -> {
+                    if (authenticated) {
+                        logger.info("User authenticated successfully: {}", credentials.getName());
+                        ctx.response()
+                                .setStatusCode(200)
+                                .putHeader("Content-Type", "application/json")
+                                .end(new JsonObject()
+                                        .put("message", "Login successful")
+                                        .put("username", credentials.getName())
+                                        .encode());
+                    } else {
+                        logger.warn("Authentication failed for user: {}", credentials.getName());
+                        ctx.response()
+                                .setStatusCode(401)
+                                .putHeader("Content-Type", "application/json")
+                                .end(new JsonObject().put("error", "Invalid username or password").encode());
+                    }
+                })
+                .onFailure(err -> {
+                    logger.error("Error during login", err);
+                    handleError(ctx, err);
+                });
         } catch (Exception e) {
-            logger.error("Error during login", e);
+            logger.error("Error parsing login data", e);
             handleError(ctx, e);
         }
     }

@@ -1,6 +1,7 @@
 package com.shiftmanagerserver.handlers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.inject.Inject;
 import com.shiftmanagerserver.entities.User;
 import com.shiftmanagerserver.service.UserService;
 import io.vertx.core.json.JsonArray;
@@ -17,52 +18,70 @@ public class UserHandler implements Handler {
     private final UserService userService;
     private final ObjectMapper objectMapper;
 
-    public UserHandler() {
-        this.userService = new UserService();
-        this.objectMapper = new ObjectMapper();
+    @Inject
+    public UserHandler(UserService userService, ObjectMapper objectMapper) {
+        this.userService = userService;
+        this.objectMapper = objectMapper;
     }
 
     public void getAllUsers(RoutingContext ctx) {
-        try {
-            List<User> users = userService.getAllUsers();
-            JsonArray usersArray = new JsonArray(objectMapper.writeValueAsString(users));
-            ctx.response()
-                    .putHeader("Content-Type", "application/json")
-                    .end(usersArray.encode());
-        } catch (Exception e) {
-            logger.error("Error fetching all users", e);
-            ctx.response().setStatusCode(500).end();
-        }
+        userService.getAllUsers()
+            .onSuccess(users -> {
+                try {
+                    JsonArray usersArray = new JsonArray(objectMapper.writeValueAsString(users));
+                    ctx.response()
+                            .putHeader("Content-Type", "application/json")
+                            .end(usersArray.encode());
+                } catch (Exception e) {
+                    logger.error("Error serializing users", e);
+                    ctx.response().setStatusCode(500).end();
+                }
+            })
+            .onFailure(err -> {
+                logger.error("Error fetching all users", err);
+                ctx.response().setStatusCode(500).end();
+            });
     }
 
     public void getUserById(RoutingContext ctx) {
         String id = ctx.pathParam("id");
-        try {
-            User user = userService.getUserById(id);
-            if (user == null) {
-                ctx.response().setStatusCode(404).end();
-                return;
-            }
-            ctx.response()
-                    .putHeader("Content-Type", "application/json")
-                    .end(JsonObject.mapFrom(user).encode());
-        } catch (Exception e) {
-            logger.error("Error fetching user by id", e);
-            ctx.response().setStatusCode(500).end();
-        }
+        userService.getUserById(id)
+            .onSuccess(user -> {
+                if (user == null) {
+                    ctx.response().setStatusCode(404).end();
+                    return;
+                }
+                ctx.response()
+                        .putHeader("Content-Type", "application/json")
+                        .end(JsonObject.mapFrom(user).encode());
+            })
+            .onFailure(err -> {
+                logger.error("Error fetching user by id", err);
+                ctx.response().setStatusCode(500).end();
+            });
     }
 
     public void createUser(RoutingContext ctx) {
         try {
             User user = objectMapper.readValue(ctx.body().asString(), User.class);
-            userService.createUser(user);
-            ctx.response()
-                    .setStatusCode(201)
-                    .putHeader("Content-Type", "application/json")
-                    .end(JsonObject.mapFrom(user).encode());
+            userService.createUser(user)
+                .onSuccess(success -> {
+                    if (success) {
+                        ctx.response()
+                                .setStatusCode(201)
+                                .putHeader("Content-Type", "application/json")
+                                .end(JsonObject.mapFrom(user).encode());
+                    } else {
+                        ctx.response().setStatusCode(409).end("User already exists");
+                    }
+                })
+                .onFailure(err -> {
+                    logger.error("Error creating user", err);
+                    ctx.response().setStatusCode(500).end();
+                });
         } catch (Exception e) {
-            logger.error("Error creating user", e);
-            ctx.response().setStatusCode(500).end();
+            logger.error("Error parsing user data", e);
+            ctx.response().setStatusCode(400).end("Invalid user data");
         }
     }
 
@@ -70,33 +89,40 @@ public class UserHandler implements Handler {
         String id = ctx.pathParam("id");
         try {
             JsonObject updates = ctx.body().asJsonObject();
-            User updated = userService.updateUser(id, updates);
-            if (updated == null) {
-                ctx.response().setStatusCode(404).end();
-                return;
-            }
-            ctx.response()
-                    .putHeader("Content-Type", "application/json")
-                    .end(JsonObject.mapFrom(updated).encode());
+            userService.updateUser(id, updates)
+                .onSuccess(updated -> {
+                    if (updated == null) {
+                        ctx.response().setStatusCode(404).end();
+                        return;
+                    }
+                    ctx.response()
+                            .putHeader("Content-Type", "application/json")
+                            .end(JsonObject.mapFrom(updated).encode());
+                })
+                .onFailure(err -> {
+                    logger.error("Error updating user", err);
+                    ctx.response().setStatusCode(500).end();
+                });
         } catch (Exception e) {
-            logger.error("Error updating user", e);
-            ctx.response().setStatusCode(500).end();
+            logger.error("Error parsing update data", e);
+            ctx.response().setStatusCode(400).end("Invalid update data");
         }
     }
 
     public void deleteUser(RoutingContext ctx) {
         String id = ctx.pathParam("id");
-        try {
-            boolean deleted = userService.deleteUser(id);
-            if (!deleted) {
-                ctx.response().setStatusCode(404).end();
-                return;
-            }
-            ctx.response().setStatusCode(204).end();
-        } catch (Exception e) {
-            logger.error("Error deleting user", e);
-            ctx.response().setStatusCode(500).end();
-        }
+        userService.deleteUser(id)
+            .onSuccess(deleted -> {
+                if (!deleted) {
+                    ctx.response().setStatusCode(404).end();
+                    return;
+                }
+                ctx.response().setStatusCode(204).end();
+            })
+            .onFailure(err -> {
+                logger.error("Error deleting user", err);
+                ctx.response().setStatusCode(500).end();
+            });
     }
 
     @Override

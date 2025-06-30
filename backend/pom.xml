@@ -61,6 +61,13 @@
             <version>7.0.0</version> <!-- or latest -->
         </dependency>
 
+        <!-- Redis Client for Vert.x -->
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-redis-client</artifactId>
+            <version>${vertx.version}</version>
+        </dependency>
+
     </dependencies>
 
     <build>

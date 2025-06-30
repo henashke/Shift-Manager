@@ -1,11 +1,13 @@
 package com.shiftmanagerserver.handlers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.inject.Inject;
 import com.shiftmanagerserver.entities.*;
 import com.shiftmanagerserver.service.ConstraintService;
 import com.shiftmanagerserver.service.ShiftService;
 import com.shiftmanagerserver.service.ShiftWeightSettingsService;
 import com.shiftmanagerserver.service.UserService;
+import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
@@ -22,33 +24,48 @@ public class ShiftHandler implements Handler {
     private final ShiftWeightSettingsService shiftWeightSettingsService;
     private final ObjectMapper objectMapper;
 
-    public ShiftHandler() {
-        this.shiftService = new ShiftService();
-        this.objectMapper = new ObjectMapper();
-        this.userService = new UserService();
-        this.shiftWeightSettingsService = new ShiftWeightSettingsService();
-        this.constraintService = new ConstraintService();
+    @Inject
+    public ShiftHandler(ShiftService shiftService,
+                       UserService userService,
+                       ConstraintService constraintService,
+                       ShiftWeightSettingsService shiftWeightSettingsService,
+                       ObjectMapper objectMapper) {
+        this.shiftService = shiftService;
+        this.userService = userService;
+        this.constraintService = constraintService;
+        this.shiftWeightSettingsService = shiftWeightSettingsService;
+        this.objectMapper = objectMapper;
     }
 
     public void getAllShifts(RoutingContext ctx) {
-        try {
-            List<AssignedShift> shifts = shiftService.getAllShifts();
-            JsonArray arr = new JsonArray(objectMapper.writeValueAsString(shifts));
-            ctx.response().putHeader("Content-Type", "application/json").end(arr.encode());
-        } catch (Exception e) {
-            logger.error("Error fetching all shifts", e);
-            ctx.response().setStatusCode(500).end();
-        }
+        shiftService.getAllShifts()
+            .onSuccess(shifts -> {
+                try {
+                    JsonArray arr = new JsonArray(objectMapper.writeValueAsString(shifts));
+                    ctx.response().putHeader("Content-Type", "application/json").end(arr.encode());
+                } catch (Exception e) {
+                    logger.error("Error serializing shifts", e);
+                    ctx.response().setStatusCode(500).end();
+                }
+            })
+            .onFailure(err -> {
+                logger.error("Error fetching all shifts", err);
+                ctx.response().setStatusCode(500).end();
+            });
     }
 
     public void addShifts(RoutingContext ctx) {
         try {
             List<AssignedShift> shifts = objectMapper.readValue(ctx.body().asString(), objectMapper.getTypeFactory().constructCollectionType(List.class, AssignedShift.class));
-            shiftService.addShifts(shifts);
-            ctx.response().setStatusCode(201).end();
+            shiftService.addShifts(shifts)
+                .onSuccess(v -> ctx.response().setStatusCode(201).end())
+                .onFailure(err -> {
+                    logger.error("Error adding multiple shifts", err);
+                    ctx.response().setStatusCode(400).end();
+                });
         } catch (Exception e) {
-            logger.error("Error adding multiple shifts", e);
-            ctx.response().setStatusCode(400).end();
+            logger.error("Error parsing shift data", e);
+            ctx.response().setStatusCode(400).end("Invalid shift data");
         }
     }
 
@@ -63,15 +80,22 @@ public class ShiftHandler implements Handler {
             }
             Date date = objectMapper.getDateFormat().parse(dateStr);
             ShiftType type = ShiftType.fromHebrewName(typeStr);
-            boolean deleted = shiftService.deleteShift(date, type);
-            if (deleted) {
-                ctx.response().setStatusCode(200).end();
-            } else {
-                ctx.response().setStatusCode(404).end();
-            }
+            
+            shiftService.deleteShift(date, type)
+                .onSuccess(deleted -> {
+                    if (deleted) {
+                        ctx.response().setStatusCode(200).end();
+                    } else {
+                        ctx.response().setStatusCode(404).end();
+                    }
+                })
+                .onFailure(err -> {
+                    logger.error("Error deleting shift", err);
+                    ctx.response().setStatusCode(400).end();
+                });
         } catch (Exception e) {
-            logger.error("Error deleting shift", e);
-            ctx.response().setStatusCode(400).end();
+            logger.error("Error parsing delete request", e);
+            ctx.response().setStatusCode(400).end("Invalid request data");
         }
     }
 
@@ -89,26 +113,59 @@ public class ShiftHandler implements Handler {
             Date endDate = objectMapper.getDateFormat().parse(endDateStr);
             List<Shift> relevantShifts = getAllShiftsBetween(startDate, endDate);
 
-            UserService userService = new UserService();
-            ConstraintService constraintService = new ConstraintService();
-            Map<User, List<Constraint>> userConstraintMap = new HashMap<>();
+            // Create a composite future to get all users and constraints
+            List<Future<User>> userFutures = new ArrayList<>();
+            List<Future<List<Constraint>>> constraintFutures = new ArrayList<>();
+            
             for (String userId : userIds) {
-                User user = userService.getUserById(userId);
-                List<Constraint> constraints = constraintService.getConstraintsByUserId(userId);
-                List<Constraint> constraintsForThisTimeFrame = constraints.stream()
-                        .filter(constraint -> relevantShifts.stream().anyMatch(shift -> shift.equals(constraint.getShift()))).toList();
-
-                userConstraintMap.put(user, constraintsForThisTimeFrame);
+                userFutures.add(userService.getUserById(userId));
+                constraintFutures.add(constraintService.getConstraintsByUserId(userId));
             }
-            List<AssignedShift> suggestedShifts = shiftService.suggestShiftAssignment(relevantShifts, userConstraintMap);
-            String responseJson = objectMapper.writeValueAsString(suggestedShifts);
-            ctx.response()
-                    .setStatusCode(200)
-                    .putHeader("Content-Type", "application/json")
-                    .end(responseJson);
+
+            // Wait for all user futures to complete
+            Future.all(userFutures)
+                .compose(usersResult -> {
+                    List<User> users = usersResult.result().list();
+                    
+                    // Wait for all constraint futures to complete
+                    return Future.all(constraintFutures)
+                        .compose(constraintsResult -> {
+                            List<List<Constraint>> allConstraints = constraintsResult.result().list();
+                            
+                            // Build the user-constraint map
+                            Map<User, List<Constraint>> userConstraintMap = new HashMap<>();
+                            for (int i = 0; i < users.size(); i++) {
+                                User user = users.get(i);
+                                List<Constraint> constraints = allConstraints.get(i);
+                                List<Constraint> constraintsForThisTimeFrame = constraints.stream()
+                                    .filter(constraint -> relevantShifts.stream().anyMatch(shift -> shift.equals(constraint.getShift())))
+                                    .toList();
+                                userConstraintMap.put(user, constraintsForThisTimeFrame);
+                            }
+                            
+                            // Suggest shift assignment
+                            return shiftService.suggestShiftAssignment(relevantShifts, userConstraintMap);
+                        });
+                })
+                .onSuccess(suggestedShifts -> {
+                    try {
+                        String responseJson = objectMapper.writeValueAsString(suggestedShifts);
+                        ctx.response()
+                                .setStatusCode(200)
+                                .putHeader("Content-Type", "application/json")
+                                .end(responseJson);
+                    } catch (Exception e) {
+                        logger.error("Error serializing suggested shifts", e);
+                        ctx.response().setStatusCode(500).end();
+                    }
+                })
+                .onFailure(err -> {
+                    logger.error("Error in suggestShiftAssignment", err);
+                    ctx.response().setStatusCode(400).end();
+                });
         } catch (Exception e) {
-            logger.error("Error in suggestShiftAssignment", e);
-            ctx.response().setStatusCode(400).end();
+            logger.error("Error parsing suggest request", e);
+            ctx.response().setStatusCode(400).end("Invalid request data");
         }
     }
 

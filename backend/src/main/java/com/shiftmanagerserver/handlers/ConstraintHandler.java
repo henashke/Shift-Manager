@@ -1,6 +1,7 @@
 package com.shiftmanagerserver.handlers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.inject.Inject;
 import com.shiftmanagerserver.entities.Constraint;
 import com.shiftmanagerserver.entities.Shift;
 import com.shiftmanagerserver.entities.ShiftType;
@@ -21,9 +22,10 @@ public class ConstraintHandler implements Handler {
     private final ConstraintService constraintService;
     private final ObjectMapper objectMapper;
 
-    public ConstraintHandler() {
-        this.constraintService = new ConstraintService();
-        this.objectMapper = new ObjectMapper();
+    @Inject
+    public ConstraintHandler(ConstraintService constraintService, ObjectMapper objectMapper) {
+        this.constraintService = constraintService;
+        this.objectMapper = objectMapper;
     }
 
     public void handleCreateConstraint(RoutingContext ctx) {
@@ -33,14 +35,20 @@ public class ConstraintHandler implements Handler {
 
             // Try to parse as a list first
             List<Constraint> constraints = objectMapper.readValue(body, objectMapper.getTypeFactory().constructCollectionType(List.class, Constraint.class));
-            constraintService.addConstraints(constraints);
-
-            ctx.response()
-                    .setStatusCode(201)
-                    .putHeader("Content-Type", "application/json")
-                    .end(new JsonObject().put("message", "Constraint(s) created successfully").encode());
+            
+            constraintService.addConstraints(constraints)
+                .onSuccess(addedConstraints -> {
+                    ctx.response()
+                            .setStatusCode(201)
+                            .putHeader("Content-Type", "application/json")
+                            .end(new JsonObject().put("message", "Constraint(s) created successfully").encode());
+                })
+                .onFailure(err -> {
+                    logger.error("Error creating constraint", err);
+                    handleError(ctx, err);
+                });
         } catch (Exception e) {
-            logger.error("Error creating constraint", e);
+            logger.error("Error parsing constraint data", e);
             handleError(ctx, e);
         }
     }
@@ -50,30 +58,45 @@ public class ConstraintHandler implements Handler {
             String userId = ctx.pathParam("userId");
             logger.info("Fetching constraints for userId: {}", userId);
 
-            List<Constraint> constraints = constraintService.getConstraintsByUserId(userId);
-            JsonArray constraintsArray = new JsonArray(objectMapper.writeValueAsString(constraints));
-
-            ctx.response()
-                    .putHeader("Content-Type", "application/json")
-                    .end(constraintsArray.encode());
+            constraintService.getConstraintsByUserId(userId)
+                .onSuccess(constraints -> {
+                    try {
+                        JsonArray constraintsArray = new JsonArray(objectMapper.writeValueAsString(constraints));
+                        ctx.response()
+                                .putHeader("Content-Type", "application/json")
+                                .end(constraintsArray.encode());
+                    } catch (Exception e) {
+                        logger.error("Error serializing constraints", e);
+                        handleError(ctx, e);
+                    }
+                })
+                .onFailure(err -> {
+                    logger.error("Error fetching constraints", err);
+                    handleError(ctx, err);
+                });
         } catch (Exception e) {
-            logger.error("Error fetching constraints", e);
+            logger.error("Error processing request", e);
             handleError(ctx, e);
         }
     }
 
     public void handleGetAllConstraints(RoutingContext ctx) {
-        try {
-            List<Constraint> constraints = constraintService.getAllConstraints();
-            JsonArray constraintsArray = new JsonArray(objectMapper.writeValueAsString(constraints));
-
-            ctx.response()
-                    .putHeader("Content-Type", "application/json")
-                    .end(constraintsArray.encode());
-        } catch (Exception e) {
-            logger.error("Error fetching all constraints", e);
-            handleError(ctx, e);
-        }
+        constraintService.getAllConstraints()
+            .onSuccess(constraints -> {
+                try {
+                    JsonArray constraintsArray = new JsonArray(objectMapper.writeValueAsString(constraints));
+                    ctx.response()
+                            .putHeader("Content-Type", "application/json")
+                            .end(constraintsArray.encode());
+                } catch (Exception e) {
+                    logger.error("Error serializing constraints", e);
+                    handleError(ctx, e);
+                }
+            })
+            .onFailure(err -> {
+                logger.error("Error fetching all constraints", err);
+                handleError(ctx, err);
+            });
     }
 
     public void handleDeleteConstraint(RoutingContext ctx) {
@@ -119,29 +142,35 @@ public class ConstraintHandler implements Handler {
                 return;
             }
 
-            boolean deleted = constraintService.deleteConstraint(userId, new Shift(date, shiftType));
-            if (deleted) {
-                ctx.response()
-                        .setStatusCode(200)
-                        .putHeader("Content-Type", "application/json")
-                        .end(new JsonObject()
-                                .put("message", "Constraint deleted successfully")
-                                .encode());
-            } else {
-                ctx.response()
-                        .setStatusCode(404)
-                        .putHeader("Content-Type", "application/json")
-                        .end(new JsonObject()
-                                .put("error", "Constraint not found")
-                                .encode());
-            }
+            constraintService.deleteConstraint(userId, new Shift(date, shiftType))
+                .onSuccess(deleted -> {
+                    if (deleted) {
+                        ctx.response()
+                                .setStatusCode(200)
+                                .putHeader("Content-Type", "application/json")
+                                .end(new JsonObject()
+                                        .put("message", "Constraint deleted successfully")
+                                        .encode());
+                    } else {
+                        ctx.response()
+                                .setStatusCode(404)
+                                .putHeader("Content-Type", "application/json")
+                                .end(new JsonObject()
+                                        .put("error", "Constraint not found")
+                                        .encode());
+                    }
+                })
+                .onFailure(err -> {
+                    logger.error("Error deleting constraint", err);
+                    handleError(ctx, err);
+                });
         } catch (Exception e) {
-            logger.error("Error deleting constraint", e);
+            logger.error("Error processing delete request", e);
             handleError(ctx, e);
         }
     }
 
-    private void handleError(RoutingContext ctx, Exception e) {
+    private void handleError(RoutingContext ctx, Throwable e) {
         HttpServerResponse response = ctx.response();
         response.setStatusCode(500)
                 .putHeader("Content-Type", "application/json")

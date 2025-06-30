@@ -1,28 +1,28 @@
 package com.shiftmanagerserver.dao;
-
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import com.shiftmanagerserver.entities.Constraint;
+import com.shiftmanagerserver.entities.AssignedShift;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class RedisConstraintDao extends AbstractRedisDao<List<Constraint>> {
+public class RedisShiftsDao extends AbstractRedisDao<List<AssignedShift>> {
+
     @Inject
-    public RedisConstraintDao(ObjectMapper mapper, @Named("redis.key.prefix") String prefix) {
-        super(mapper, prefix + ":constraints", LoggerFactory.getLogger(RedisConstraintDao.class));
+    public RedisShiftsDao(ObjectMapper mapper, @Named("redis.key.prefix") String prefix) {
+        super(mapper, prefix + ":shifts", LoggerFactory.getLogger(RedisShiftsDao.class));
     }
 
     @Override
-    protected TypeReference<List<Constraint>> typeReference() {
+    protected TypeReference<List<AssignedShift>> typeReference() {
         return new TypeReference<>() {};
     }
 
     @Override
-    protected List<Constraint> empty() {
+    protected List<AssignedShift> empty() {
         return new ArrayList<>();
     }
 }

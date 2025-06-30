@@ -3,10 +3,11 @@ package com.shiftmanagerserver.modules;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
+import com.google.inject.TypeLiteral;
 import com.google.inject.name.Names;
 import com.shiftmanagerserver.dao.AsyncIO;
 import com.shiftmanagerserver.dao.RedisUserDao;
-import com.shiftmanagerserver.dao.RedisShiftDao;
+import com.shiftmanagerserver.dao.RedisShiftsDao;
 import com.shiftmanagerserver.dao.RedisConstraintDao;
 import com.shiftmanagerserver.dao.RedisShiftWeightSettingsDao;
 import com.shiftmanagerserver.entities.User;
@@ -81,20 +82,20 @@ public class Module extends AbstractModule {
         bindConstant().annotatedWith(Names.named("redis.key.prefix")).to(redisKeyPrefix);
         
         // Bind Redis DAO as the primary implementation for AsyncIO
-        bind(new com.google.inject.TypeLiteral<AsyncIO<Set<User>, Set<User>>>() {})
-            .annotatedWith(Names.named("user.dao"))
-            .to(RedisUserDao.class);
+        bind(new TypeLiteral<AsyncIO<Set<User>, Set<User>>>() {})
+                .annotatedWith(Names.named("user.dao"))
+                .to(RedisUserDao.class);
         
         // Bind Redis DAOs for other entities
-        bind(new com.google.inject.TypeLiteral<AsyncIO<List<AssignedShift>, List<AssignedShift>>>() {})
+        bind(new TypeLiteral<AsyncIO<List<AssignedShift>, List<AssignedShift>>>() {})
             .annotatedWith(Names.named("shift.dao"))
-            .to(RedisShiftDao.class);
+            .to(RedisShiftsDao.class);
             
-        bind(new com.google.inject.TypeLiteral<AsyncIO<List<Constraint>, List<Constraint>>>() {})
+        bind(new TypeLiteral<AsyncIO<List<Constraint>, List<Constraint>>>() {})
             .annotatedWith(Names.named("constraint.dao"))
             .to(RedisConstraintDao.class);
             
-        bind(new com.google.inject.TypeLiteral<AsyncIO<ShiftWeightSettings, ShiftWeightSettings>>() {})
+        bind(new TypeLiteral<AsyncIO<ShiftWeightSettings, ShiftWeightSettings>>() {})
             .annotatedWith(Names.named("shift.weight.settings.dao"))
             .to(RedisShiftWeightSettingsDao.class);
         

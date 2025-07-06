@@ -1,6 +1,5 @@
 package com.shiftmanagerserver.service;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -14,7 +13,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
@@ -60,20 +58,14 @@ public class ConstraintService {
 
     public Future<Constraint> createConstraint(Constraint constraint) {
         Promise<Constraint> promise = Promise.promise();
-        
-        if (!initialized) {
             loadConstraintsAsync()
                 .onSuccess(v -> {
-                    initialized = true;
                     proceedWithCreateConstraint(constraint, promise);
                 })
                 .onFailure(err -> {
                     logger.error("Error loading constraints", err);
                     promise.fail(err);
                 });
-        } else {
-            proceedWithCreateConstraint(constraint, promise);
-        }
             
         return promise.future();
     }
@@ -91,26 +83,18 @@ public class ConstraintService {
 
     public Future<List<Constraint>> getConstraintsByUserId(String userId) {
         Promise<List<Constraint>> promise = Promise.promise();
-        
-        if (!initialized) {
-            loadConstraintsAsync()
-                .onSuccess(v -> {
-                    initialized = true;
-                    List<Constraint> userConstraints = constraints.stream()
-                            .filter(c -> c.getUserId().equals(userId))
-                            .collect(Collectors.toList());
-                    promise.complete(userConstraints);
-                })
-                .onFailure(err -> {
-                    logger.error("Error loading constraints", err);
-                    promise.fail(err);
-                });
-        } else {
-            List<Constraint> userConstraints = constraints.stream()
-                    .filter(c -> c.getUserId().equals(userId))
-                    .collect(Collectors.toList());
-            promise.complete(userConstraints);
-        }
+
+        loadConstraintsAsync()
+            .onSuccess(v -> {
+                List<Constraint> userConstraints = constraints.stream()
+                        .filter(c -> c.getUserId().equals(userId))
+                        .collect(Collectors.toList());
+                promise.complete(userConstraints);
+            })
+            .onFailure(err -> {
+                logger.error("Error loading constraints", err);
+                promise.fail(err);
+            });
         return promise.future();
     }
 
@@ -155,29 +139,15 @@ public class ConstraintService {
         }
     }
 
-    public Future<List<Constraint>> getAllConstraints() {
-        Promise<List<Constraint>> promise = Promise.promise();
-        
-        if (!initialized) {
-            loadConstraintsAsync()
-                .onSuccess(v -> {
-                    initialized = true;
-                    promise.complete(new ArrayList<>(constraints));
-                })
-                .onFailure(err -> {
-                    logger.error("Error loading constraints", err);
-                    promise.fail(err);
-                });
-        } else {
-            promise.complete(new ArrayList<>(constraints));
-        }
-        return promise.future();
+    public Future<ArrayList<Constraint>> getAllConstraints() {
+            return loadConstraintsAsync()
+                .map(v ->
+                    new ArrayList<>(constraints))
+                .onFailure(err -> logger.error("Error loading constraints", err));
     }
 
     public Future<List<Constraint>> addConstraints(List<Constraint> newConstraints) {
         Promise<List<Constraint>> promise = Promise.promise();
-        
-        if (!initialized) {
             loadConstraintsAsync()
                 .onSuccess(v -> {
                     initialized = true;
@@ -187,9 +157,6 @@ public class ConstraintService {
                     logger.error("Error loading constraints", err);
                     promise.fail(err);
                 });
-        } else {
-            proceedWithAddConstraints(newConstraints, promise);
-        }
             
         return promise.future();
     }

@@ -134,23 +134,10 @@ public class UserService {
         promise.complete(authenticated);
     }
 
-    public Future<List<User>> getAllUsers() {
-        Promise<List<User>> promise = Promise.promise();
-        
-        if (!initialized) {
-            loadUsersAsync()
-                .onSuccess(v -> {
-                    initialized = true;
-                    promise.complete(new ArrayList<>(users));
-                })
-                .onFailure(err -> {
-                    logger.error("Error loading users", err);
-                    promise.fail(err);
-                });
-        } else {
-            promise.complete(new ArrayList<>(users));
-        }
-        return promise.future();
+    public Future<ArrayList<User>> getAllUsers() {
+            return loadUsersAsync()
+                .map(v -> new ArrayList<>(users))
+                .onFailure(err -> logger.error("Error loading users", err));
     }
 
     public Future<User> getUserById(String id) {

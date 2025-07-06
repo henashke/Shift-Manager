@@ -1,23 +1,23 @@
 package com.shiftmanagerserver.entities;
 
 public class AssignedShift extends Shift {
-    private String userId;
+    private String assignedUsername;
 
     public AssignedShift() {
         super();
     }
 
-    public AssignedShift(String userId, Shift shift) {
+    public AssignedShift(String assignedUsername, Shift shift) {
         super(shift.getDate(), shift.getType());
-        this.userId = userId;
+        this.assignedUsername = assignedUsername;
     }
 
-    public String getUserId() {
-        return userId;
+    public String getAssignedUsername() {
+        return assignedUsername;
     }
 
-    public void setUserId(String userId) {
-        this.userId = userId;
+    public void setAssignedUsername(String assignedUsername) {
+        this.assignedUsername = assignedUsername;
     }
 
 }

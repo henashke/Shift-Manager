@@ -56,20 +56,11 @@ public class ShiftWeightSettingsService {
 
     public Future<ShiftWeightSettings> getSettings() {
         Promise<ShiftWeightSettings> promise = Promise.promise();
-        
-        if (!initialized) {
-            loadSettingsAsync()
-                .onSuccess(v -> {
-                    initialized = true;
-                    promise.complete(settings);
-                })
-                .onFailure(err -> {
-                    logger.error("Error loading settings", err);
-                    promise.fail(err);
-                });
-        } else {
-            promise.complete(settings);
-        }
+
+        loadSettingsAsync()
+            .onSuccess(v -> promise.complete(settings))
+            .onFailure(err -> promise.fail(err));
+
         return promise.future();
     }
 

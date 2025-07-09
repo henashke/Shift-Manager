@@ -178,7 +178,7 @@ export class ShiftStore {
                     return ({
                         date: new Date(shift.date),
                         type: shift.type,
-                        assignedUsername: shift.userId || ''
+                        assignedUsername: shift.assignedUsername || ''
                     })
                 });
                 this.loading = false;

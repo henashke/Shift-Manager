@@ -11,6 +11,7 @@ import io.vertx.core.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -55,13 +56,11 @@ public class ShiftWeightSettingsService {
     }
 
     public Future<ShiftWeightSettings> getSettings() {
-        Promise<ShiftWeightSettings> promise = Promise.promise();
 
-        loadSettingsAsync()
-            .onSuccess(v -> promise.complete(settings))
-            .onFailure(err -> promise.fail(err));
+        return loadSettingsAsync()
+                .map(v ->  settings)
+                .onFailure(err -> logger.error("Error loading users", err));
 
-        return promise.future();
     }
 
     public Future<Void> saveSettings(ShiftWeightSettings newSettings) {

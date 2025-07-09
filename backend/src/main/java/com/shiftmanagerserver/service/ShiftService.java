@@ -176,8 +176,15 @@ public class ShiftService {
                     int shiftIndex = 0;
 
                     for (ShiftWeight shiftWeight : shiftsWeight) {
-                        Shift newShift = new Shift(shiftsToAssign.get(shiftIndex).getDate(), shiftsToAssign.get(shiftIndex).getType());
-                        shiftIndex++;
+                        Optional<Shift> matchedShiftOpt = findMatchingShift(shiftWeight, shiftsToAssign);
+
+                        if (matchedShiftOpt.isEmpty()) {
+                            logger.warn("No matching shift found for: " + shiftWeight.getDay() + " " + shiftWeight.getShiftType());
+                            continue;
+                        }
+
+                        Shift newShift = matchedShiftOpt.get();
+                        shiftsToAssign.remove(newShift);
 
                         boolean assigned = false;
 
@@ -258,6 +265,32 @@ public class ShiftService {
                 yield 2;
             }
         };
+    }
+
+    private Optional<Shift> findMatchingShift(ShiftWeight shiftWeight, List<Shift> availableShifts) {
+        Map<String, Integer> hebrewDayToCalendarDay = Map.of(
+                Day.SUNDAY.getHebrewName(), Calendar.SUNDAY,
+                Day.MONDAY.getHebrewName(), Calendar.MONDAY,
+                Day.TUESDAY.getHebrewName(), Calendar.TUESDAY,
+                Day.WEDNESDAY.getHebrewName(), Calendar.WEDNESDAY,
+                Day.THURSDAY.getHebrewName(), Calendar.THURSDAY,
+                Day.FRIDAY.getHebrewName(), Calendar.FRIDAY,
+                Day.SATURDAY.getHebrewName(), Calendar.SATURDAY
+        );
+
+        Integer calendarDay = hebrewDayToCalendarDay.get(shiftWeight.getDay().getHebrewName());
+        if (calendarDay == null) {
+            return Optional.empty(); // Unknown day
+        }
+
+        return availableShifts.stream()
+                .filter(s -> {
+                    Calendar cal = Calendar.getInstance();
+                    cal.setTime(s.getDate());
+                    int shiftDayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
+                    return shiftDayOfWeek == calendarDay && s.getType() == shiftWeight.getShiftType();
+                })
+                .findFirst();
     }
 
     private boolean isSameDay(Date d1, Date d2) {

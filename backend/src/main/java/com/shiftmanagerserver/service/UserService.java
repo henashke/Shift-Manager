@@ -53,7 +53,7 @@ public class UserService {
         return promise.future();
     }
 
-    private Future<Void> saveUsersAsync() {
+    protected Future<Void> saveUsersAsync() {
         return userDao.write(users)
             .onSuccess(v -> logger.info("Successfully saved {} users to Redis", users.size()))
             .onFailure(err -> logger.error("Error saving users to Redis", err));

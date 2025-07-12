@@ -20,6 +20,8 @@ import AssignToShiftDialog from './AssignToShiftDialog';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import ShiftTableActions from './ShiftTableActions';
+import authStore from '../stores/AuthStore';
+import notificationStore from '../stores/NotificationStore';
 
 const days = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 const shiftTypes = ['יום', 'לילה'] as const;
@@ -39,6 +41,7 @@ interface ShiftTableProps<T> {
     onDragEndHandler?: () => void;
     onDragStartHandler?: (e: React.DragEvent, draggedElement: T, fromShift?: Shift) => void;
     itemName?: string;
+    requireAdmin?: boolean;
 }
 
 function ShiftTable<T>({
@@ -55,7 +58,8 @@ function ShiftTable<T>({
                            onDropHandler,
                            onDragStartHandler,
                            onDragEndHandler,
-                           itemName
+                           itemName,
+                           requireAdmin = true
                        }: ShiftTableProps<T>) {
     const {weekDates} = store;
     const [assignDialogOpen, setAssignDialogOpen] = useState(false);
@@ -67,6 +71,10 @@ function ShiftTable<T>({
     } | null>(null);
 
     const onDrop = (e: React.DragEvent, shift: Shift) => {
+        if (requireAdmin && !authStore.isAdmin()) {
+            notificationStore.showUnauthorizedError();
+            return;
+        }
         onDropHandler?.(e, shift);
     };
 
@@ -75,6 +83,10 @@ function ShiftTable<T>({
     };
 
     const handleCellClick = (shift: Shift) => {
+        if (requireAdmin && !authStore.isAdmin()) {
+            notificationStore.showUnauthorizedError();
+            return;
+        }
         setSelectedShift(shift);
         setAssignDialogOpen(true);
     };
@@ -101,6 +113,10 @@ function ShiftTable<T>({
     };
 
     const handleAssignUser = () => {
+        if (requireAdmin && !authStore.isAdmin()) {
+            notificationStore.showUnauthorizedError();
+            return;
+        }
         if (contextMenu?.shift) {
             setSelectedShift(contextMenu.shift);
             setAssignDialogOpen(true);
@@ -109,6 +125,10 @@ function ShiftTable<T>({
     };
 
     const handleRemoveItem = () => {
+        if (requireAdmin && !authStore.isAdmin()) {
+            notificationStore.showUnauthorizedError();
+            return;
+        }
         if (contextMenu?.shift) {
             unassignHandler?.(contextMenu.shift);
         }
@@ -131,6 +151,7 @@ function ShiftTable<T>({
                 <ShiftTableActions
                     onSave={onSave}
                     onCancel={onCancel}
+                    requireAdmin={requireAdmin}
                 />
             }
             <TableContainer component={Paper} sx={{borderRadius: 3, boxShadow: 3, direction: 'rtl', height: '100%'}}

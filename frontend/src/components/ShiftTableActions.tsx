@@ -1,9 +1,12 @@
 import React from 'react';
 import {Box, Button, Grow, Paper, Typography} from '@mui/material';
+import authStore from '../stores/AuthStore';
+import notificationStore from '../stores/NotificationStore';
 
 interface ShiftTableActionsProps {
     onSave: () => void;
     onCancel: () => void;
+    requireAdmin?: boolean;
 }
 
 const ColorIndicators = () => (
@@ -35,7 +38,23 @@ const ColorIndicators = () => (
     </Box>
 );
 
-const ShiftTableActions: React.FC<ShiftTableActionsProps> = ({onSave, onCancel}) => {
+const ShiftTableActions: React.FC<ShiftTableActionsProps> = ({onSave, onCancel, requireAdmin = true}) => {
+    const handleSave = () => {
+        if (requireAdmin && !authStore.isAdmin()) {
+            notificationStore.showUnauthorizedError();
+            return;
+        }
+        onSave();
+    };
+
+    const handleCancel = () => {
+        if (requireAdmin && !authStore.isAdmin()) {
+            notificationStore.showUnauthorizedError();
+            return;
+        }
+        onCancel();
+    };
+
     return (
         <Grow in timeout={700} style={{ transformOrigin: 'left center' }}>
             <Paper sx={{p: 2, flexDirection: 'column', alignItems: 'flex-start', flex: 1, borderRadius: 3}}>
@@ -43,7 +62,7 @@ const ShiftTableActions: React.FC<ShiftTableActionsProps> = ({onSave, onCancel})
                     <Button
                         variant="contained"
                         color="primary"
-                        onClick={onSave}
+                        onClick={handleSave}
                         sx={{ml: 1}}
                     >
                         שמור
@@ -51,7 +70,7 @@ const ShiftTableActions: React.FC<ShiftTableActionsProps> = ({onSave, onCancel})
                     <Button
                         variant="outlined"
                         color="secondary"
-                        onClick={onCancel}
+                        onClick={handleCancel}
                     >
                         בטל
                     </Button>

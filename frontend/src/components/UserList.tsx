@@ -8,6 +8,8 @@ import UserInfoDialog from "./UserInfoDialog";
 import DraggableList from './DraggableList';
 import {Button} from "@mui/material";
 import EditUser from "./dialogs/EditUser";
+import authStore from "../stores/AuthStore";
+import notificationStore from "../stores/NotificationStore";
 
 const UserList: React.FC<{ isDragged?: boolean }> = observer(({ isDragged }) => {
     const {users} = usersStore;
@@ -34,6 +36,10 @@ const UserList: React.FC<{ isDragged?: boolean }> = observer(({ isDragged }) => 
         e.dataTransfer.setData('application/json', JSON.stringify({user: user, fromShift: fromShift || null}));
     };
     const handleEditDialogOpen = (user: User) => {
+        if (!authStore.isAdmin()) {
+            notificationStore.showUnauthorizedError();
+            return;
+        }
         setSelectedUser(user);
         setEditDialogOpen(true);
     };
@@ -44,6 +50,10 @@ const UserList: React.FC<{ isDragged?: boolean }> = observer(({ isDragged }) => 
     };
 
     const handleDeleteDialogOpen = (user: User) => {
+        if (!authStore.isAdmin()) {
+            notificationStore.showUnauthorizedError();
+            return;
+        }
         setSelectedUser(user);
         setDeleteDialogOpen(true);
     };
@@ -81,7 +91,17 @@ const UserList: React.FC<{ isDragged?: boolean }> = observer(({ isDragged }) => 
                 ]}
                 isDragged={isDragged}
                 renderAddButton={() => (
-                    <Button variant="contained" color="primary" onClick={() => setAddDialogOpen(true)}>
+                    <Button 
+                        variant="contained" 
+                        color="primary" 
+                        onClick={() => {
+                            if (!authStore.isAdmin()) {
+                                notificationStore.showUnauthorizedError();
+                                return;
+                            }
+                            setAddDialogOpen(true);
+                        }}
+                    >
                         הוסף משתמש
                     </Button>
                 )}

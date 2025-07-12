@@ -3,6 +3,7 @@ import usersStore from './stores/UsersStore';
 import {constraintStore} from './stores/ConstraintStore';
 import shiftStore from './stores/ShiftStore';
 import shiftWeightStore from './stores/ShiftWeightStore';
+import NotificationDisplay from './components/NotificationDisplay';
 import {
     AppBar,
     Box,
@@ -182,6 +183,7 @@ const App: React.FC = observer(() => {
                 <Route path="/settings" element={<SettingsTab/>}/>
                 <Route path="/" element={<AssignmentTab/>}/>
             </Routes>
+            <NotificationDisplay />
         </ThemeProvider>
     );
 });

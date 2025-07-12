@@ -21,6 +21,8 @@ import {
 import usersStore from "../stores/UsersStore";
 import {observer} from 'mobx-react-lite';
 import shiftStore, {sameShift, Shift, User} from "../stores/ShiftStore";
+import authStore from "../stores/AuthStore";
+import notificationStore from "../stores/NotificationStore";
 
 const AssignmentTab: React.FC = observer(() => {
     const {users} = usersStore;
@@ -75,7 +77,13 @@ const AssignmentTab: React.FC = observer(() => {
         return users.find(u => u.name === shiftStore.pendingAssignedShifts.find(assignedShift => sameShift(assignedShift, shift))?.assignedUsername)
     }
 
-    const handleSuggestOpen = () => setSuggestDialogOpen(true);
+    const handleSuggestOpen = () => {
+        if (!authStore.isAdmin()) {
+            notificationStore.showUnauthorizedError();
+            return;
+        }
+        setSuggestDialogOpen(true);
+    };
     const handleSuggestClose = () => setSuggestDialogOpen(false);
     const handleUserToggle = (userId: string) => {
         setSelectedUserIds(prev =>
@@ -83,6 +91,10 @@ const AssignmentTab: React.FC = observer(() => {
         );
     };
     const handleSuggestConfirm = async () => {
+        if (!authStore.isAdmin()) {
+            notificationStore.showUnauthorizedError();
+            return;
+        }
         const weekDates = shiftStore.weekDates;
         const startDate = weekDates[0];
         const endDate = weekDates[6];
@@ -90,9 +102,19 @@ const AssignmentTab: React.FC = observer(() => {
         setSuggestDialogOpen(false);
     };
 
-    const handleResetOpen = () => setResetDialogOpen(true);
+    const handleResetOpen = () => {
+        if (!authStore.isAdmin()) {
+            notificationStore.showUnauthorizedError();
+            return;
+        }
+        setResetDialogOpen(true);
+    };
     const handleResetClose = () => setResetDialogOpen(false);
     const handleResetConfirm = async () => {
+        if (!authStore.isAdmin()) {
+            notificationStore.showUnauthorizedError();
+            return;
+        }
         setResetLoading(true);
         setResetError(false);
         const result = await shiftStore.resetWeeklyShifts();

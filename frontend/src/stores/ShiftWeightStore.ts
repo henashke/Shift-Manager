@@ -2,6 +2,7 @@ import {makeAutoObservable, runInAction} from 'mobx';
 import config from '../config';
 import {ShiftType} from './ShiftStore';
 import authStore from './AuthStore';
+import notificationStore from './NotificationStore';
 
 export interface ShiftWeight {
     day: string;
@@ -64,7 +65,14 @@ class ShiftWeightStore {
                 headers: authStore.getAuthHeaders(),
                 body: JSON.stringify(preset)
             });
-            if (!res.ok) throw new Error('Failed to save shift weight preset');
+            if (!res.ok) {
+                if (res.status === 403) {
+                    notificationStore.showUnauthorizedError();
+                } else {
+                    throw new Error('Failed to save shift weight preset');
+                }
+                return;
+            }
             // Optionally, refresh presets from server
             await this.fetchPresets();
         } catch (e) {
@@ -81,6 +89,8 @@ class ShiftWeightStore {
             });
             if (res.ok) {
                 this.currentPreset = presetName;
+            } else if (res.status === 403) {
+                notificationStore.showUnauthorizedError();
             }
         } catch (e) {
             console.error('Failed to set default preset', e);

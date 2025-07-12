@@ -4,6 +4,7 @@ import {ConstraintType} from "../components/ConstraintTypeList";
 import {sameShift, Shift} from "./ShiftStore";
 import config from "../config";
 import authStore from "./AuthStore";
+import notificationStore from "./NotificationStore";
 
 export type Constraint = {
     userId: string;
@@ -46,9 +47,15 @@ class ConstraintStore {
             });
             if (res.ok) {
                 this.mergePendingToConstraints();
+                notificationStore.showSuccess('האילוצים נשמרו בהצלחה');
+            } else if (res.status === 403) {
+                notificationStore.showConstraintUnauthorizedError();
+            } else {
+                notificationStore.showError('שגיאה בשמירת האילוצים');
             }
         } catch (e) {
             console.error('Failed to save pending constraints', e);
+            notificationStore.showError('שגיאה בשמירת האילוצים');
         }
     }
 
@@ -69,8 +76,9 @@ class ConstraintStore {
     get hasPendingConstraints() {
         return this.pendingConstraints.length > 0;
     }
-    async removeConstraint(shift: Shift) {
-        const removedFromPendingConstraints = this.removeConstraintPending(shift, authStore.username!);
+    async removeConstraint(shift: Shift, userId?: string) {
+        const targetUserId = userId || authStore.username!;
+        const removedFromPendingConstraints = this.removeConstraintPending(shift, targetUserId);
         if (removedFromPendingConstraints) {
             return
         }
@@ -80,24 +88,33 @@ class ConstraintStore {
                 method: 'DELETE',
                 headers: authStore.getAuthHeaders(),
                 body: JSON.stringify({
-                    userId: authStore.username,
+                    userId: targetUserId,
                     date: shift.date,
                     shiftType: shift.type
                 })
             });
             if (res.ok) {
-                this.removeConstraintFromStore(shift);
+                this.removeConstraintFromStore(shift, targetUserId);
+                notificationStore.showSuccess('האילוץ נמחק בהצלחה');
+            } else if (res.status === 403) {
+                notificationStore.showConstraintUnauthorizedError();
+            } else if (res.status === 404) {
+                notificationStore.showError('האילוץ לא נמצא');
+            } else {
+                notificationStore.showError('שגיאה במחיקת האילוץ');
             }
         } catch (e) {
             console.error('Failed to remove constraint from server', e);
+            notificationStore.showError('שגיאה במחיקת האילוץ');
         }
     }
 
-    removeConstraintFromStore(shift: Shift) {
+    removeConstraintFromStore(shift: Shift, userId?: string) {
+        const targetUserId = userId || authStore.username!;
         this.constraints = this.constraints.filter(c => !(sameShift({
             date: c.shift.date,
             type: c.shift.type
-        }, shift) && authStore.username === c.userId));
+        }, shift) && targetUserId === c.userId));
     }
 
     async fetchConstraint() {

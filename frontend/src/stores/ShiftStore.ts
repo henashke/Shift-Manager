@@ -1,6 +1,7 @@
 import {makeAutoObservable, runInAction} from "mobx";
 import config from "../config";
 import authStore from "./AuthStore";
+import notificationStore from "./NotificationStore";
 
 export interface User {
     name: string;
@@ -145,7 +146,14 @@ export class ShiftStore {
                 headers: authStore.getAuthHeaders(),
                 body: JSON.stringify(this.pendingAssignedShifts),
             });
-            if (!response.ok) throw new Error('Failed to save shifts');
+            if (!response.ok) {
+                if (response.status === 403) {
+                    notificationStore.showUnauthorizedError();
+                } else {
+                    throw new Error('Failed to save shifts');
+                }
+                return;
+            }
             runInAction(() => {
                 this.mergePendingToAssigned();
             });
@@ -153,7 +161,6 @@ export class ShiftStore {
             runInAction(() => {
                 this.loading = false;
             });
-            // Optionally handle error (e.g., show notification)
             console.error(error);
         }
     };
@@ -167,7 +174,14 @@ export class ShiftStore {
                 headers: authStore.getAuthHeaders(),
                 body: JSON.stringify({userIds, startDate, endDate}),
             });
-            if (!response.ok) throw new Error('Failed to suggest shifts');
+            if (!response.ok) {
+                if (response.status === 403) {
+                    notificationStore.showUnauthorizedError();
+                } else {
+                    throw new Error('Failed to suggest shifts');
+                }
+                return;
+            }
             const data = await response.json();
             console.log(data)
             runInAction(() => {
@@ -200,7 +214,14 @@ export class ShiftStore {
                 headers: authStore.getAuthHeaders(),
                 body: JSON.stringify({ weekStart: weekStart.toISOString().slice(0, 10) })
             });
-            if (!response.ok) throw new Error('Failed to reset weekly shifts');
+            if (!response.ok) {
+                if (response.status === 403) {
+                    notificationStore.showUnauthorizedError();
+                } else {
+                    throw new Error('Failed to reset weekly shifts');
+                }
+                return 'error';
+            }
             await this.fetchShifts();
             runInAction(() => {
                 this.loading = false;

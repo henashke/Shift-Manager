@@ -9,6 +9,7 @@ import {sameShift, Shift, User} from '../stores/ShiftStore';
 import authStore from "../stores/AuthStore";
 import {Constraint, constraintStore} from "../stores/ConstraintStore";
 import usersStore from "../stores/UsersStore";
+import notificationStore from "../stores/NotificationStore";
 
 const constraintTypes = [ConstraintType.CANT, ConstraintType.PREFERS_NOT, ConstraintType.PREFERS];
 
@@ -48,6 +49,11 @@ const ConstraintTab: React.FC = observer(() => {
                 fromShift: Shift
             } = JSON.parse(data);
             if (userId && !sameShift(fromShift, shift)) {
+                // Check if user is trying to edit their own constraints or is admin
+                if (!authStore.isAdmin() && userId !== authStore.username) {
+                    notificationStore.showConstraintUnauthorizedError();
+                    return;
+                }
                 assignConstraint(shift, constraintType);
             }
         } catch (error) {
@@ -60,13 +66,18 @@ const ConstraintTab: React.FC = observer(() => {
         const data = e.dataTransfer.getData('application/json');
         if (!data) return;
         try {
-            const {fromShift}: {
+            const {userId, fromShift}: {
                 userId: string,
                 constraintType: ConstraintType,
                 fromShift: Shift
             } = JSON.parse(data);
             if (fromShift) {
-                constraintStore.removeConstraint(fromShift);
+                // Check if user is trying to edit their own constraints or is admin
+                if (!authStore.isAdmin() && userId !== authStore.username) {
+                    notificationStore.showConstraintUnauthorizedError();
+                    return;
+                }
+                constraintStore.removeConstraint(fromShift, userId);
             }
         } catch (e) {
             console.error('Failed to parse data from drag event:', data, e);
@@ -74,6 +85,11 @@ const ConstraintTab: React.FC = observer(() => {
     };
 
     const assignConstraint = (shift: Shift, constraintType: ConstraintType) => {
+        // Check if user is trying to edit their own constraints or is admin
+        if (!authStore.isAdmin() && selectedUser !== authStore.username) {
+            notificationStore.showConstraintUnauthorizedError();
+            return;
+        }
         constraintStore.addConstraintPending({
             constraintType: constraintType,
             shift: shift,
@@ -109,7 +125,14 @@ const ConstraintTab: React.FC = observer(() => {
                         assignedShifts={createAllConstraintsArray()}
                         retrieveItemFromShift={retrieveConstraintFromShift}
                         assignHandler={assignConstraint}
-                        unassignHandler={(shift: Shift) => constraintStore.removeConstraint(shift)}
+                        unassignHandler={(shift: Shift) => {
+                            // Check if user is trying to edit their own constraints or is admin
+                            if (!authStore.isAdmin() && selectedUser !== authStore.username) {
+                                notificationStore.showConstraintUnauthorizedError();
+                                return;
+                            }
+                            constraintStore.removeConstraint(shift, selectedUser);
+                        }}
                         getItemName={(item: ConstraintType) => item.toString()}
                         pendingItem={getPendingConstraintTypeFromShift}
                         onDragStartHandler={onAssignedConstraintDragStart}
@@ -121,6 +144,7 @@ const ConstraintTab: React.FC = observer(() => {
                             constraintStore.pendingConstraints = [];
                         }}
                         itemName="אילוץ"
+                        requireAdmin={false}
             />
             <Box sx={{display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 2}}>
                 <FormControl size="small" sx={{minWidth: 160, display: 'flex'}}>
@@ -135,6 +159,11 @@ const ConstraintTab: React.FC = observer(() => {
                         ))}
                     </Select>
                 </FormControl>
+                {!authStore.isAdmin() && selectedUser !== authStore.username && (
+                    <Typography variant="body2" color="warning.main" sx={{fontStyle: 'italic'}}>
+                        (רק צפייה - לא ניתן לערוך אילוצים של כונן אחר)
+                    </Typography>
+                )}
                 <DraggableList
                     items={constraintTypes}
                     getKey={item => item}

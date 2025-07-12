@@ -20,6 +20,8 @@ import {observer} from 'mobx-react-lite';
 import shiftWeightStore, {ShiftWeight} from '../stores/ShiftWeightStore';
 import PresetNameDialog from './dialogs/PresetNameDialog';
 import {ShiftType} from "../stores/ShiftStore";
+import authStore from '../stores/AuthStore';
+import notificationStore from '../stores/NotificationStore';
 
 const daysOfWeek = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 const shiftTypes: ShiftType[] = ['יום', 'לילה'];
@@ -91,10 +93,18 @@ const SettingsTab: React.FC = observer(() => {
     };
 
     const handleSave = () => {
+        if (!authStore.isAdmin()) {
+            notificationStore.showUnauthorizedError();
+            return;
+        }
         setPresetNameDialogOpen(true);
     };
 
     const handlePresetNameSave = (name: string) => {
+        if (!authStore.isAdmin()) {
+            notificationStore.showUnauthorizedError();
+            return;
+        }
         setPresetNameDialogOpen(false);
         const weights: ShiftWeight[] = [];
         for (const day of daysOfWeek) {
@@ -107,6 +117,10 @@ const SettingsTab: React.FC = observer(() => {
     };
 
     const handleMakeDefault = async () => {
+        if (!authStore.isAdmin()) {
+            notificationStore.showUnauthorizedError();
+            return;
+        }
         if (!preset) return;
         await shiftWeightStore.setCurrentPresetOnServer(preset);
     };

@@ -29,7 +29,11 @@ const LoginSignup: React.FC = observer(() => {
     setLoading(true);
     try {
       const endpoint = tab === 0 ? '/auth/login' : '/auth/signup';
-      const res = await fetch(`${config.API_BASE_URL}${endpoint}`, {
+      const url = `${config.API_BASE_URL}${endpoint}`;
+      console.log('Making request to:', url);
+      console.log('Config API_BASE_URL:', config.API_BASE_URL);
+      console.log('Endpoint:', endpoint);
+      const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: username, password: password })
@@ -51,6 +55,12 @@ const LoginSignup: React.FC = observer(() => {
         setSuccess('הרשמה הושלמה בהצלחה! אנא התחבר למערכת.');
       }
     } catch (err: any) {
+      console.error('Login error:', err);
+      console.error('Error details:', {
+        message: err.message,
+        stack: err.stack,
+        name: err.name
+      });
       setError(err.message);
     } finally {
       setLoading(false);

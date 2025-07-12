@@ -4,10 +4,27 @@ WORKDIR /frontend
 COPY frontend/package*.json ./
 RUN npm install
 COPY frontend/ .
-# Set environment variable for production build - empty string means same origin
+
+# Set environment variables for production build
+ENV NODE_ENV=production
 ENV REACT_APP_API_BASE_URL=""
-ENV NODE_ENV="production"
+
+# Debug: Print environment variables
+RUN echo "NODE_ENV: $NODE_ENV"
+RUN echo "REACT_APP_API_BASE_URL: '$REACT_APP_API_BASE_URL'"
+
+# Create a .env file to ensure React reads the environment variables
+RUN echo "REACT_APP_API_BASE_URL=" > .env
+RUN echo "NODE_ENV=production" >> .env
+
+# Build the frontend with the correct environment variables
 RUN npm run build
+
+# Verify the build output and check for localhost references
+RUN echo "=== Build verification ==="
+RUN ls -la build/
+RUN echo "=== Checking for localhost references ==="
+RUN find build/ -name "*.js" -exec grep -l "localhost:8080" {} \; || echo "No localhost:8080 found in build files"
 
 # === Stage 2: Build Java backend ===
 FROM maven:3.9.6-eclipse-temurin-17 as backend-builder

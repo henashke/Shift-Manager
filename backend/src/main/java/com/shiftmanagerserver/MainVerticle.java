@@ -108,7 +108,7 @@ public class MainVerticle extends AbstractVerticle {
     private void bindRoutes(Router router,
                             AuthHandler authHandler, UserHandler userHandler, ConstraintHandler constraintHandler,
                             ShiftHandler shiftHandler, ShiftWeightSettingsHandler shiftWeightSettingsHandler) {
-        router.route("/*").handler(StaticHandler.create("static"));
+        // API routes first
         authHandler.addRoutes(router); // login/signup are public
         
         // Protect all API routes except auth using custom JWT handler
@@ -122,5 +122,9 @@ public class MainVerticle extends AbstractVerticle {
         constraintHandler.addRoutes(router);
         shiftHandler.addRoutes(router);
         shiftWeightSettingsHandler.addRoutes(router);
+        
+        // Serve static files from root for SPA
+        logger.info("Setting up static file handler for SPA");
+        router.route("/*").handler(StaticHandler.create("static").setIndexPage("index.html"));
     }
 }

@@ -69,7 +69,9 @@ public class AuthHandler implements Handler {
     public void handleLogin(RoutingContext ctx) {
         try {
             String body = ctx.body().asString();
-            logger.info("Received login request");
+            logger.info("Received login request from: {}", ctx.request().getHeader("Origin"));
+            logger.info("Request path: {}", ctx.request().path());
+            logger.info("Request method: {}", ctx.request().method());
 
             User credentials = objectMapper.readValue(body, User.class);
 

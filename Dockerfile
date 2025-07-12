@@ -4,6 +4,9 @@ WORKDIR /frontend
 COPY frontend/package*.json ./
 RUN npm install
 COPY frontend/ .
+# Set environment variable for production build - empty string means same origin
+ENV REACT_APP_API_BASE_URL=""
+ENV NODE_ENV="production"
 RUN npm run build
 
 # === Stage 2: Build Java backend ===

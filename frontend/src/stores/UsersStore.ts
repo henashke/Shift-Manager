@@ -1,5 +1,6 @@
 import {makeAutoObservable, runInAction} from 'mobx';
 import config from '../config';
+import authStore from './AuthStore';
 
 export interface User {
   id: string;
@@ -13,13 +14,24 @@ class UserStore {
 
   constructor() {
     makeAutoObservable(this);
-    this.fetchUsers();
+    // Don't fetch automatically - will be called when needed
   }
 
   fetchUsers = async () => {
+    // Only fetch if authenticated
+    if (!authStore.isAuthenticated()) {
+      console.log('Not authenticated, skipping users fetch');
+      return;
+    }
+    
     this.loading = true;
     try {
-      const res = await fetch(`${config.API_BASE_URL}/users`);
+      const res = await fetch(`${config.API_BASE_URL}/users`, {
+        headers: authStore.getAuthHeaders()
+      });
+      if (!res.ok) {
+        throw new Error(`Failed to fetch users: ${res.status}`);
+      }
       const data = await res.json();
       runInAction(() => {
         this.users = data;
@@ -28,6 +40,7 @@ class UserStore {
     } catch (e) {
       runInAction(() => {
         this.loading = false;
+        console.error('Failed to fetch users', e);
       });
     }
   };

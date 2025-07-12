@@ -13,7 +13,10 @@ import {
     List,
     ListItem,
     ListItemIcon,
-    ListItemText
+    ListItemText,
+    Box,
+    Snackbar,
+    Alert
 } from "@mui/material";
 import usersStore from "../stores/UsersStore";
 import {observer} from 'mobx-react-lite';
@@ -24,6 +27,10 @@ const AssignmentTab: React.FC = observer(() => {
     const [isDragged, setIsDragged] = useState(false);
     const [suggestDialogOpen, setSuggestDialogOpen] = useState(false);
     const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+    const [resetDialogOpen, setResetDialogOpen] = useState(false);
+    const [resetLoading, setResetLoading] = useState(false);
+    const [resetSuccess, setResetSuccess] = useState(false);
+    const [resetError, setResetError] = useState(false);
 
     useEffect(() => {
         usersStore.fetchUsers();
@@ -83,11 +90,31 @@ const AssignmentTab: React.FC = observer(() => {
         setSuggestDialogOpen(false);
     };
 
+    const handleResetOpen = () => setResetDialogOpen(true);
+    const handleResetClose = () => setResetDialogOpen(false);
+    const handleResetConfirm = async () => {
+        setResetLoading(true);
+        setResetError(false);
+        const result = await shiftStore.resetWeeklyShifts();
+        if (result === 'success') {
+            setResetSuccess(true);
+        } else {
+            setResetError(true);
+        }
+        setResetLoading(false);
+        setResetDialogOpen(false);
+    };
+
     return (
         <Container maxWidth={"xl"} dir={"rtl"}>
-            <Button variant="contained" color="secondary" sx={{mb: 2}} onClick={handleSuggestOpen}>
-                הצע שיבוץ משמרות
-            </Button>
+            <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+                <Button variant="contained" color="secondary" onClick={handleSuggestOpen}>
+                    הצע שיבוץ משמרות
+                </Button>
+                <Button variant="outlined" color="error" onClick={handleResetOpen}>
+                    אתחל משמרות השבוע
+                </Button>
+            </Box>
             <Dialog open={suggestDialogOpen} onClose={handleSuggestClose}>
                 <DialogTitle>בחר משתמשים רלוונטיים לשיבוץ הקרוב</DialogTitle>
                 <DialogContent>
@@ -117,6 +144,22 @@ const AssignmentTab: React.FC = observer(() => {
                     </Button>
                 </DialogActions>
             </Dialog>
+            <Dialog open={resetDialogOpen} onClose={handleResetClose}>
+                <DialogTitle>אישור איפוס</DialogTitle>
+                <DialogContent>האם אתה בטוח שברצונך לאפס את כל המשמרות של השבוע הנוכחי?</DialogContent>
+                <DialogActions>
+                    <Button onClick={handleResetClose} disabled={resetLoading}>ביטול</Button>
+                    <Button onClick={handleResetConfirm} color="error" variant="contained" disabled={resetLoading}>
+                        {resetLoading ? 'מאפס...' : 'אשר' }
+                    </Button>
+                </DialogActions>
+            </Dialog>
+            <Snackbar open={resetSuccess} autoHideDuration={3000} onClose={() => setResetSuccess(false)}>
+                <Alert severity="success" sx={{ width: '100%' }}>כל המשמרות של השבוע אופסו בהצלחה</Alert>
+            </Snackbar>
+            <Snackbar open={resetError} autoHideDuration={3000} onClose={() => setResetError(false)}>
+                <Alert severity="error" sx={{ width: '100%' }}>אירעה שגיאה בעת איפוס המשמרות</Alert>
+            </Snackbar>
             <CalendarNavigation/>
             <ShiftTable onDropHandler={handleDrop}
                         onDragStartHandler={onDragStart}

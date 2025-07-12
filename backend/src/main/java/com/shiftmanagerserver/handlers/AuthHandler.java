@@ -9,16 +9,18 @@ import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.shiftmanagerserver.service.JWTService;
 
 public class AuthHandler implements Handler {
     private static final Logger logger = LoggerFactory.getLogger(AuthHandler.class);
     private final UserService userService;
     private final ObjectMapper objectMapper;
+    private final JWTService jwtService;
 
-    @Inject
-    public AuthHandler(UserService userService, ObjectMapper objectMapper) {
+    public AuthHandler(UserService userService, ObjectMapper objectMapper, JWTService jwtService) {
         this.userService = userService;
         this.objectMapper = objectMapper;
+        this.jwtService = jwtService;
     }
 
     public void handleSignup(RoutingContext ctx) {
@@ -27,6 +29,7 @@ public class AuthHandler implements Handler {
             logger.info("Received signup request");
 
             User user = objectMapper.readValue(body, User.class);
+            user.setRole("user"); // Always set role to user on signup
 
             if (user.getName() == null || user.getName().trim().isEmpty() ||
                     user.getPassword() == null || user.getPassword().trim().isEmpty()) {
@@ -83,12 +86,19 @@ public class AuthHandler implements Handler {
                 .onSuccess(authenticated -> {
                     if (authenticated) {
                         logger.info("User authenticated successfully: {}", credentials.getName());
+                        User user = userService.getUserByNameSync(credentials.getName());
+                        
+                        // Generate JWT token
+                        String token = jwtService.generateToken(user.getName(), user.getRole());
+                        
                         ctx.response()
                                 .setStatusCode(200)
                                 .putHeader("Content-Type", "application/json")
                                 .end(new JsonObject()
                                         .put("message", "Login successful")
                                         .put("username", credentials.getName())
+                                        .put("role", user.getRole())
+                                        .put("token", token)
                                         .encode());
                     } else {
                         logger.warn("Authentication failed for user: {}", credentials.getName());

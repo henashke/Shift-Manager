@@ -18,8 +18,7 @@ public class UserHandler implements Handler {
     private final UserService userService;
     private final ObjectMapper objectMapper;
 
-    @Inject
-    public UserHandler(UserService userService, ObjectMapper objectMapper) {
+    public UserHandler(UserService userService, com.fasterxml.jackson.databind.ObjectMapper objectMapper) {
         this.userService = userService;
         this.objectMapper = objectMapper;
     }
@@ -111,6 +110,14 @@ public class UserHandler implements Handler {
 
     public void deleteUser(RoutingContext ctx) {
         String id = ctx.pathParam("id");
+        
+        // Permission check: only admin can delete users
+        String role = ctx.user().principal().getString("role");
+        if (!"admin".equals(role)) {
+            ctx.response().setStatusCode(403).end("Admins only");
+            return;
+        }
+        
         userService.deleteUser(id)
             .onSuccess(deleted -> {
                 if (!deleted) {

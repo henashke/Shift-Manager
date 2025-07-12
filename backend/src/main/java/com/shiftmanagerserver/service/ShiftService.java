@@ -110,19 +110,31 @@ public class ShiftService {
             String currentPreset = settings.getCurrentPreset();
             var preset = settings.getPresets().get(currentPreset);
             userService.getAllUsers().onSuccess(users -> {
-                // Map for quick lookup
                 Map<String, User> userMap = new HashMap<>();
                 for (User u : users) userMap.put(u.getName(), u);
 
-                // For each existing shift, check if assignment changed or was removed
+                // Determine the date range of newShifts
+                Date minDate = null, maxDate = null;
+                for (AssignedShift s : newShifts) {
+                    if (minDate == null || s.getDate().before(minDate)) minDate = s.getDate();
+                    if (maxDate == null || s.getDate().after(maxDate)) maxDate = s.getDate();
+                }
+
+                // Only consider old shifts within the date range of newShifts
                 List<AssignedShift> toRemove = new ArrayList<>();
                 for (AssignedShift oldShift : new ArrayList<>(shifts)) {
+                    boolean inRange = false;
+                    if (minDate != null && maxDate != null) {
+                        inRange = !oldShift.getDate().before(minDate) && !oldShift.getDate().after(maxDate);
+                    }
+                    if (!inRange) continue; // Only process shifts in the range
+
                     AssignedShift newShift = newShifts.stream()
                             .filter(s -> s.getDate().equals(oldShift.getDate()) && s.getType() == oldShift.getType())
                             .findFirst().orElse(null);
                     boolean assignmentChanged = false;
                     if (newShift == null) {
-                        // Shift was removed
+                        // Shift was removed (in this week)
                         assignmentChanged = true;
                     } else if (!Objects.equals(oldShift.getAssignedUsername(), newShift.getAssignedUsername())) {
                         // Assignment changed (including unassigned)
@@ -143,7 +155,7 @@ public class ShiftService {
                         toRemove.add(oldShift);
                     }
                 }
-                // Remove old shifts that are replaced or deleted
+                // Remove old shifts that are replaced or deleted (only in range)
                 for (AssignedShift shift : toRemove) {
                     shifts.remove(shift);
                 }
@@ -153,7 +165,6 @@ public class ShiftService {
                     shift.setUuid(UUID.randomUUID());
                     shifts.add(shift);
                     if (shift.getAssignedUsername() != null) {
-                        // Only increment if this user is not the same as the previous assignment
                         AssignedShift prev = toRemove.stream()
                                 .filter(s -> s.getDate().equals(shift.getDate()) && s.getType() == shift.getType())
                                 .findFirst().orElse(null);
@@ -237,10 +248,42 @@ public class ShiftService {
 
     public Future<List<AssignedShift>> suggestShiftAssignment(List<Shift> shifts, Map<User, List<Constraint>> userToConstraints) {
         Promise<List<AssignedShift>> promise = Promise.promise();
+        
+        if (!initialized) {
+            loadShiftsAsync()
+                    .onSuccess(v -> {
+                        initialized = true;
+                        proceedWithSuggestAssignment(shifts, userToConstraints, promise);
+                    })
+                    .onFailure(err -> {
+                        logger.error("Error loading shifts", err);
+                        promise.fail(err);
+                    });
+        } else {
+            proceedWithSuggestAssignment(shifts, userToConstraints, promise);
+        }
+        return promise.future();
+    }
+
+    private void proceedWithSuggestAssignment(List<Shift> shifts, Map<User, List<Constraint>> userToConstraints, Promise<List<AssignedShift>> promise) {
+        // Filter out admin users from assignment
+        String adminUsername = System.getenv().getOrDefault("ADMIN_USERNAME", "admin");
+        Map<User, List<Constraint>> nonAdminUserToConstraints = userToConstraints.entrySet().stream()
+            .filter(entry -> !"admin".equals(entry.getKey().getRole()) && !adminUsername.equals(entry.getKey().getName()))
+            .collect(java.util.stream.Collectors.toMap(
+                java.util.Map.Entry::getKey,
+                java.util.Map.Entry::getValue
+            ));
+
+        List<User> users = new ArrayList<>(nonAdminUserToConstraints.keySet());
+        if (users.isEmpty()) {
+            promise.complete(new ArrayList<>());
+            return;
+        }
+
         Vertx vertx = Vertx.currentContext().owner();
         shiftWeightSettingsService.getSettings().onSuccess(settings -> {
             // Fast greedy assignment first
-            List<User> users = new ArrayList<>(userToConstraints.keySet().stream().toList());
             String currentPreset = settings.getCurrentPreset();
             List<ShiftWeight> shiftsWeight = settings.getPresets().get(currentPreset).getWeights();
             List<Shift> shiftsToAssign = new ArrayList<>(shifts);
@@ -273,7 +316,7 @@ public class ShiftService {
                 boolean assigned = false;
                 for (User user : users) {
                     String userId = user.getName();
-                    List<Constraint> constraints = userToConstraints.get(user);
+                    List<Constraint> constraints = nonAdminUserToConstraints.get(user);
                     List<Shift> pastShifts = userShifts.get(userId);
                     int currentMissed = userMissedDays.get(userId);
                     int score = userScores.getOrDefault(userId, 0);
@@ -318,13 +361,15 @@ public class ShiftService {
                 promise.complete(greedyAssignment);
                 return;
             }
-            // If greedy failed, use backtracking with 7s time limit
+            // If greedy failed, use backtracking with 10s time limit
             vertx.executeBlocking(future -> {
                 long startTime = System.currentTimeMillis();
-                long maxMillis = 7000L;
+                long maxMillis = 10000L; // 10 seconds
                 try {
-                    List<AssignedShift> bestAssignment = new ArrayList<>();
-                    int[] bestScoreDiff = {Integer.MAX_VALUE};
+                    List<AssignedShift> bestFullAssignment = new ArrayList<>();
+                    int[] bestFullScoreDiff = {Integer.MAX_VALUE};
+                    List<AssignedShift> bestPartialAssignment = new ArrayList<>();
+                    int[] bestPartialSize = {0};
                     // Prepare user state for backtracking
                     Map<String, List<Shift>> userShiftsBT = new HashMap<>();
                     Map<String, Integer> userMissedDaysBT = new HashMap<>();
@@ -334,13 +379,12 @@ public class ShiftService {
                         userMissedDaysBT.put(user.getName(), 0);
                         userScoresBT.put(user.getName(), user.getScore());
                     }
-                    assignShiftsBacktrackTimed(0, uniqueShifts, users, userToConstraints, userShiftsBT, userMissedDaysBT, userScoresBT, new ArrayList<>(), bestAssignment, bestScoreDiff, currentPreset, settings, startTime, maxMillis);
-                    if (System.currentTimeMillis() - startTime > maxMillis) {
-                        // Time limit exceeded
-                        future.complete(new ArrayList<>());
-                        return;
+                    assignShiftsBacktrackTimedFull(0, uniqueShifts, users, nonAdminUserToConstraints, userShiftsBT, userMissedDaysBT, userScoresBT, new ArrayList<>(), bestFullAssignment, bestFullScoreDiff, bestPartialAssignment, bestPartialSize, currentPreset, settings, startTime, maxMillis);
+                    // Prefer full assignment if found, else partial
+                    if (bestFullAssignment.size() == uniqueShifts.size()) {
+                        future.complete(new ArrayList<>(bestFullAssignment));
                     } else {
-                        future.complete(new ArrayList<>(bestAssignment));
+                        future.complete(new ArrayList<>(bestPartialAssignment));
                     }
                 } catch (Exception e) {
                     future.fail(e);
@@ -354,22 +398,29 @@ public class ShiftService {
                 }
             });
         }).onFailure(promise::fail);
-        return promise.future();
     }
 
-    private void assignShiftsBacktrackTimed(int idx, List<Shift> shifts, List<User> users, Map<User, List<Constraint>> userToConstraints,
+    private void assignShiftsBacktrackTimedFull(int idx, List<Shift> shifts, List<User> users, Map<User, List<Constraint>> userToConstraints,
                                             Map<String, List<Shift>> userShifts, Map<String, Integer> userMissedDays, Map<String, Integer> userScores,
-                                            List<AssignedShift> currentAssignment, List<AssignedShift> bestAssignment, int[] bestScoreDiff,
+                                            List<AssignedShift> currentAssignment, List<AssignedShift> bestFullAssignment, int[] bestFullScoreDiff,
+                                            List<AssignedShift> bestPartialAssignment, int[] bestPartialSize,
                                             String currentPreset, ShiftWeightSettings settings, long startTime, long maxMillis) {
         if (System.currentTimeMillis() - startTime > maxMillis) return;
         if (idx == shifts.size()) {
+            // Full assignment
             int maxScore = userScores.values().stream().max(Integer::compareTo).orElse(0);
             int minScore = userScores.values().stream().min(Integer::compareTo).orElse(0);
             int scoreDiff = maxScore - minScore;
-            if (scoreDiff < bestScoreDiff[0]) {
-                bestScoreDiff[0] = scoreDiff;
-                bestAssignment.clear();
-                bestAssignment.addAll(currentAssignment);
+            if (scoreDiff < bestFullScoreDiff[0]) {
+                bestFullScoreDiff[0] = scoreDiff;
+                bestFullAssignment.clear();
+                bestFullAssignment.addAll(currentAssignment);
+            }
+            // Also update best partial (should be same as full here)
+            if (currentAssignment.size() > bestPartialSize[0]) {
+                bestPartialSize[0] = currentAssignment.size();
+                bestPartialAssignment.clear();
+                bestPartialAssignment.addAll(currentAssignment);
             }
             return;
         }
@@ -405,7 +456,7 @@ public class ShiftService {
                     .findFirst().orElse(1);
             userScores.put(userId, score + weight);
             currentAssignment.add(new AssignedShift(userId, shift));
-            assignShiftsBacktrackTimed(idx + 1, shifts, users, userToConstraints, userShifts, userMissedDays, userScores, currentAssignment, bestAssignment, bestScoreDiff, currentPreset, settings, startTime, maxMillis);
+            assignShiftsBacktrackTimedFull(idx + 1, shifts, users, userToConstraints, userShifts, userMissedDays, userScores, currentAssignment, bestFullAssignment, bestFullScoreDiff, bestPartialAssignment, bestPartialSize, currentPreset, settings, startTime, maxMillis);
             pastShifts.remove(pastShifts.size() - 1);
             userMissedDays.put(userId, currentMissed);
             userScores.put(userId, score);
@@ -413,7 +464,14 @@ public class ShiftService {
             assigned = true;
         }
         if (!assigned) {
-            assignShiftsBacktrackTimed(idx + 1, shifts, users, userToConstraints, userShifts, userMissedDays, userScores, currentAssignment, bestAssignment, bestScoreDiff, currentPreset, settings, startTime, maxMillis);
+            // Could not assign this shift, update best partial
+            if (currentAssignment.size() > bestPartialSize[0]) {
+                bestPartialSize[0] = currentAssignment.size();
+                bestPartialAssignment.clear();
+                bestPartialAssignment.addAll(currentAssignment);
+            }
+            // Continue to next shift (skip this one)
+            assignShiftsBacktrackTimedFull(idx + 1, shifts, users, userToConstraints, userShifts, userMissedDays, userScores, currentAssignment, bestFullAssignment, bestFullScoreDiff, bestPartialAssignment, bestPartialSize, currentPreset, settings, startTime, maxMillis);
         }
     }
 
@@ -489,5 +547,77 @@ public class ShiftService {
             default:
                 throw new IllegalArgumentException("Invalid day of week: " + dayOfWeek);
         }
+    }
+
+    /**
+     * Deletes all shifts for the specified week (Sunday–Saturday), updates user scores.
+     * @param weekStart start date of the week (Sunday)
+     * @return Future<Integer> number of deleted shifts
+     */
+    public Future<Integer> deleteShiftsForWeek(Date weekStart) {
+        Promise<Integer> promise = Promise.promise();
+        Calendar start = Calendar.getInstance();
+        start.setTime(weekStart);
+        start.set(Calendar.HOUR_OF_DAY, 0);
+        start.set(Calendar.MINUTE, 0);
+        start.set(Calendar.SECOND, 0);
+        start.set(Calendar.MILLISECOND, 0);
+        Calendar end = (Calendar) start.clone();
+        end.add(Calendar.DAY_OF_MONTH, 6);
+        end.set(Calendar.HOUR_OF_DAY, 23);
+        end.set(Calendar.MINUTE, 59);
+        end.set(Calendar.SECOND, 59);
+        end.set(Calendar.MILLISECOND, 999);
+        Date weekEnd = end.getTime();
+
+        if (!initialized) {
+            loadShiftsAsync()
+                .onSuccess(v -> {
+                    initialized = true;
+                    proceedWithDeleteShiftsForWeek(weekStart, weekEnd, promise);
+                })
+                .onFailure(promise::fail);
+        } else {
+            proceedWithDeleteShiftsForWeek(weekStart, weekEnd, promise);
+        }
+        return promise.future();
+    }
+
+    private void proceedWithDeleteShiftsForWeek(Date weekStart, Date weekEnd, Promise<Integer> promise) {
+        shiftWeightSettingsService.getSettings().onSuccess(settings -> {
+            String currentPreset = settings.getCurrentPreset();
+            var preset = settings.getPresets().get(currentPreset);
+            userService.getAllUsers().onSuccess(users -> {
+                Map<String, User> userMap = new HashMap<>();
+                for (User u : users) userMap.put(u.getName(), u);
+                int initialSize = shifts.size();
+                List<AssignedShift> toRemove = new ArrayList<>();
+                for (AssignedShift s : new ArrayList<>(shifts)) {
+                    Date d = s.getDate();
+                    if (d != null && !d.before(weekStart) && !d.after(weekEnd)) {
+                        // Update user score if assigned
+                        if (s.getAssignedUsername() != null) {
+                            User user = userMap.get(s.getAssignedUsername());
+                            if (user != null) {
+                                int weight = preset.getWeights().stream()
+                                        .filter(w -> w.getDay() == getDayOfWeek(s.getDate()) && w.getShiftType() == s.getType())
+                                        .map(ShiftWeight::getWeight)
+                                        .findFirst().orElse(1);
+                                int newScore = user.getScore() - weight;
+                                user.setScore(Math.max(0, newScore));
+                            }
+                        }
+                        toRemove.add(s);
+                    }
+                }
+                for (AssignedShift s : toRemove) {
+                    shifts.remove(s);
+                }
+                int deleted = toRemove.size();
+                saveShiftsAsync()
+                    .onSuccess(v -> userService.saveUsersAsync().onSuccess(v2 -> promise.complete(deleted)).onFailure(promise::fail))
+                    .onFailure(promise::fail);
+            }).onFailure(promise::fail);
+        }).onFailure(promise::fail);
     }
 }

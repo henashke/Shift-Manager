@@ -1,4 +1,8 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
+import usersStore from './stores/UsersStore';
+import {constraintStore} from './stores/ConstraintStore';
+import shiftStore from './stores/ShiftStore';
+import shiftWeightStore from './stores/ShiftWeightStore';
 import {
     AppBar,
     Box,
@@ -35,6 +39,28 @@ const App: React.FC = observer(() => {
     });
     const menuOpen = Boolean(anchorEl);
     const navigate = useNavigate();
+
+    // Check authentication on app load and trigger data fetching
+    useEffect(() => {
+        if (!authStore.isAuthenticated() && window.location.pathname !== '/login') {
+            navigate('/login');
+        } else if (authStore.isAuthenticated() && window.location.pathname === '/login') {
+            navigate('/');
+        }
+    }, [navigate]);
+
+    // Separate effect for data fetching when authenticated
+    useEffect(() => {
+        if (authStore.isAuthenticated() && window.location.pathname !== '/login') {
+            // Trigger data fetching when authenticated and not on login page
+            setTimeout(() => {
+                usersStore.fetchUsers();
+                constraintStore.fetchConstraint();
+                shiftStore.fetchShifts();
+                shiftWeightStore.fetchPresets();
+            }, 100); // Small delay to ensure authentication state is set
+        }
+    }, [authStore.isAuthenticated(), window.location.pathname]);
 
     const theme = createTheme({
         palette: {
@@ -101,12 +127,12 @@ const App: React.FC = observer(() => {
                             </Tabs>
                         </Box>
                     </Box>
-                    {!authStore.username && (
+                    {!authStore.isAuthenticated() && (
                         <IconButton aria-label="login" color="inherit" onClick={() => navigate('/login')}>
                             <LoginIcon/>
                         </IconButton>
                     )}
-                    {authStore.username && (
+                    {authStore.isAuthenticated() && (
                         <Box sx={{direction: 'rtl', ml: 2, display: 'flex', alignItems: 'center'}}>
                             <Tooltip title="אפשרויות משתמש">
                                 <Typography

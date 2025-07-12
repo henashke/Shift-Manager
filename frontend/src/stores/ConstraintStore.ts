@@ -17,7 +17,7 @@ class ConstraintStore {
 
     constructor() {
         makeAutoObservable(this);
-        this.fetchConstraint()
+        // Don't fetch automatically - will be called when needed
     }
 
     addConstraintPending(constraint: Constraint) {
@@ -41,7 +41,7 @@ class ConstraintStore {
         try {
             const res = await fetch(url, {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
+                headers: authStore.getAuthHeaders(),
                 body: JSON.stringify(this.pendingConstraints)
             });
             if (res.ok) {
@@ -78,7 +78,7 @@ class ConstraintStore {
         try {
             const res = await fetch(url, {
                 method: 'DELETE',
-                headers: {'Content-Type': 'application/json'},
+                headers: authStore.getAuthHeaders(),
                 body: JSON.stringify({
                     userId: authStore.username,
                     date: shift.date,
@@ -101,8 +101,16 @@ class ConstraintStore {
     }
 
     async fetchConstraint() {
+        // Only fetch if authenticated
+        if (!authStore.isAuthenticated()) {
+            console.log('Not authenticated, skipping constraints fetch');
+            return;
+        }
+        
         const url = `${config.API_BASE_URL}/constraints`;
-        const res = await fetch(url);
+        const res = await fetch(url, {
+            headers: authStore.getAuthHeaders()
+        });
         if (!res.ok) throw new Error('Failed to fetch constraints');
         const json = await res.json();
         const data: Constraint[] = (json);

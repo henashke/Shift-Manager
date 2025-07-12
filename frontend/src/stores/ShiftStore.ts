@@ -1,5 +1,6 @@
 import {makeAutoObservable, runInAction} from "mobx";
 import config from "../config";
+import authStore from "./AuthStore";
 
 export interface User {
     name: string;
@@ -25,7 +26,7 @@ export class ShiftStore {
 
     constructor() {
         makeAutoObservable(this);
-        this.fetchShifts();
+        // Don't fetch automatically - will be called when needed
     }
 
     get weekDates() {
@@ -41,13 +42,17 @@ export class ShiftStore {
     }
 
     fetchShifts = async () => {
+        // Only fetch if authenticated
+        if (!authStore.isAuthenticated()) {
+            console.log('Not authenticated, skipping shifts fetch');
+            return;
+        }
+        
         this.loading = true;
         try {
             const response = await fetch(`${config.API_BASE_URL}/shifts`, {
                 method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: authStore.getAuthHeaders(),
             });
             if (!response.ok) throw new Error('Failed to fetch shifts');
             const data = await response.json();
@@ -76,9 +81,7 @@ export class ShiftStore {
         try {
             const response = await fetch(`${config.API_BASE_URL}/shifts`, {
                 method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: authStore.getAuthHeaders(),
                 body: JSON.stringify(shift),
             });
             if (!response.ok) throw new Error('Failed to unassign shift');
@@ -139,9 +142,7 @@ export class ShiftStore {
         try {
             const response = await fetch(`${config.API_BASE_URL}/shifts`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: authStore.getAuthHeaders(),
                 body: JSON.stringify(this.pendingAssignedShifts),
             });
             if (!response.ok) throw new Error('Failed to save shifts');
@@ -163,9 +164,7 @@ export class ShiftStore {
         try {
             const response = await fetch(`${config.API_BASE_URL}/shifts/suggest`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: authStore.getAuthHeaders(),
                 body: JSON.stringify({userIds, startDate, endDate}),
             });
             if (!response.ok) throw new Error('Failed to suggest shifts');
@@ -188,6 +187,31 @@ export class ShiftStore {
                 this.loading = false;
             });
             console.error(error);
+        }
+    }
+
+    // Reset all shifts for the displayed week
+    resetWeeklyShifts = async (): Promise<'success' | 'error'> => {
+        this.loading = true;
+        try {
+            const weekStart = this.weekDates[0];
+            const response = await fetch(`${config.API_BASE_URL}/shifts/week`, {
+                method: 'DELETE',
+                headers: authStore.getAuthHeaders(),
+                body: JSON.stringify({ weekStart: weekStart.toISOString().slice(0, 10) })
+            });
+            if (!response.ok) throw new Error('Failed to reset weekly shifts');
+            await this.fetchShifts();
+            runInAction(() => {
+                this.loading = false;
+            });
+            return 'success';
+        } catch (error) {
+            runInAction(() => {
+                this.loading = false;
+            });
+            console.error(error);
+            return 'error';
         }
     }
 

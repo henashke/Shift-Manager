@@ -24,12 +24,11 @@ public class ShiftHandler implements Handler {
     private final ShiftWeightSettingsService shiftWeightSettingsService;
     private final ObjectMapper objectMapper;
 
-    @Inject
-    public ShiftHandler(ShiftService shiftService,
-                       UserService userService,
-                       ConstraintService constraintService,
-                       ShiftWeightSettingsService shiftWeightSettingsService,
-                       ObjectMapper objectMapper) {
+    public ShiftHandler(com.shiftmanagerserver.service.ShiftService shiftService,
+                       com.shiftmanagerserver.service.UserService userService,
+                       com.shiftmanagerserver.service.ConstraintService constraintService,
+                       com.shiftmanagerserver.service.ShiftWeightSettingsService shiftWeightSettingsService,
+                       com.fasterxml.jackson.databind.ObjectMapper objectMapper) {
         this.shiftService = shiftService;
         this.userService = userService;
         this.constraintService = constraintService;
@@ -56,6 +55,13 @@ public class ShiftHandler implements Handler {
 
     public void addShifts(RoutingContext ctx) {
         try {
+            // Permission check: only admin can add shifts
+            String role = ctx.user().principal().getString("role");
+            if (!"admin".equals(role)) {
+                ctx.response().setStatusCode(403).end("Admins only");
+                return;
+            }
+            
             List<AssignedShift> shifts = objectMapper.readValue(ctx.body().asString(), objectMapper.getTypeFactory().constructCollectionType(List.class, AssignedShift.class));
             shiftService.addShifts(shifts)
                 .onSuccess(v -> ctx.response().setStatusCode(201).end())
@@ -71,6 +77,13 @@ public class ShiftHandler implements Handler {
 
     public void deleteShift(RoutingContext ctx) {
         try {
+            // Permission check: only admin can delete shifts
+            String role = ctx.user().principal().getString("role");
+            if (!"admin".equals(role)) {
+                ctx.response().setStatusCode(403).end("Admins only");
+                return;
+            }
+            
             JsonObject body = ctx.body().asJsonObject();
             String dateStr = body.getString("date");
             String typeStr = body.getString("type");
@@ -101,6 +114,13 @@ public class ShiftHandler implements Handler {
 
     public void suggestShiftAssignment(RoutingContext ctx) {
         try {
+            // Permission check: only admin can suggest shift assignments
+            String role = ctx.user().principal().getString("role");
+            if (!"admin".equals(role)) {
+                ctx.response().setStatusCode(403).end("Admins only");
+                return;
+            }
+            
             JsonObject body = ctx.body().asJsonObject();
             List<String> userIds = body.getJsonArray("userIds").getList();
             String startDateStr = body.getString("startDate");
@@ -116,7 +136,7 @@ public class ShiftHandler implements Handler {
             // Create a composite future to get all users and constraints
             List<Future<User>> userFutures = new ArrayList<>();
             List<Future<List<Constraint>>> constraintFutures = new ArrayList<>();
-            
+
             for (String userId : userIds) {
                 userFutures.add(userService.getUserById(userId));
                 constraintFutures.add(constraintService.getConstraintsByUserId(userId));
@@ -124,82 +144,51 @@ public class ShiftHandler implements Handler {
 
             // Wait for all user futures to complete
             Future.all(userFutures)
-                .compose(usersResult -> {
-                    List<User> users = usersResult.result().list();
-                    
-                    // Wait for all constraint futures to complete
-                    return Future.all(constraintFutures)
-                        .compose(constraintsResult -> {
-                            List<List<Constraint>> allConstraints = constraintsResult.result().list();
-                            
-                            // Build the user-constraint map
-                            Map<User, List<Constraint>> userConstraintMap = new HashMap<>();
-                            for (int i = 0; i < users.size(); i++) {
-                                User user = users.get(i);
-                                List<Constraint> constraints = allConstraints.get(i);
-                                List<Constraint> constraintsForThisTimeFrame = constraints.stream()
-                                    .filter(constraint -> relevantShifts.stream().anyMatch(shift -> shift.equals(constraint.getShift())))
-                                    .toList();
-                                userConstraintMap.put(user, constraintsForThisTimeFrame);
-                            }
-                            
-                            // Suggest shift assignment
-                            return shiftService.suggestShiftAssignment(relevantShifts, userConstraintMap);
-                        });
-                })
-                .onSuccess(suggestedShifts -> {
-                    try {
-                        String responseJson = objectMapper.writeValueAsString(suggestedShifts);
-                        ctx.response()
-                                .setStatusCode(200)
-                                .putHeader("Content-Type", "application/json")
-                                .end(responseJson);
-                    } catch (Exception e) {
-                        logger.error("Error serializing suggested shifts", e);
-                        ctx.response().setStatusCode(500).end();
-                    }
-                })
-                .onFailure(err -> {
-                    logger.error("Error in suggestShiftAssignment", err);
-                    ctx.response().setStatusCode(400).end();
-                });
+                    .compose(usersResult -> {
+                        List<User> users = usersResult.result().list();
+
+                        // Wait for all constraint futures to complete
+                        return Future.all(constraintFutures)
+                                .compose(constraintsResult -> {
+                                    List<List<Constraint>> allConstraints = constraintsResult.result().list();
+
+                                    // Build the user-constraint map
+                                    Map<User, List<Constraint>> userConstraintMap = new HashMap<>();
+                                    for (int i = 0; i < users.size(); i++) {
+                                        User user = users.get(i);
+                                        List<Constraint> constraints = allConstraints.get(i);
+                                        List<Constraint> constraintsForThisTimeFrame = constraints.stream()
+                                                .filter(constraint -> relevantShifts.stream().anyMatch(shift -> shift.equals(constraint.getShift())))
+                                                .toList();
+                                        userConstraintMap.put(user, constraintsForThisTimeFrame);
+                                    }
+
+                                    // Suggest shift assignment
+                                    return shiftService.suggestShiftAssignment(relevantShifts, userConstraintMap);
+                                });
+                    })
+                    .onSuccess(suggestedShifts -> {
+                        try {
+                            String responseJson = objectMapper.writeValueAsString(suggestedShifts);
+                            ctx.response()
+                                    .setStatusCode(200)
+                                    .putHeader("Content-Type", "application/json")
+                                    .end(responseJson);
+                        } catch (Exception e) {
+                            logger.error("Error serializing suggested shifts", e);
+                            ctx.response().setStatusCode(500).end();
+                        }
+                    })
+                    .onFailure(err -> {
+                        logger.error("Error in suggestShiftAssignment", err);
+                        ctx.response().setStatusCode(400).end();
+                    });
         } catch (Exception e) {
             logger.error("Error parsing suggest request", e);
             ctx.response().setStatusCode(400).end("Invalid request data");
         }
     }
 
-    public List<Shift> generateShiftsBetween(Date startDate, Date endDate) {
-        List<Shift> shifts = new ArrayList<>();
-        Calendar current = Calendar.getInstance();
-        current.setTime(startDate);
-        Calendar end = Calendar.getInstance();
-        end.setTime(endDate);
-        end.set(Calendar.HOUR_OF_DAY, 0);
-        end.set(Calendar.MINUTE, 0);
-        end.set(Calendar.SECOND, 0);
-        end.set(Calendar.MILLISECOND, 0);
-
-        // Always include the last day fully
-
-        while (!current.after(end) || current.get(Calendar.YEAR) == end.get(Calendar.YEAR) && current.get(Calendar.DAY_OF_YEAR) == end.get(Calendar.DAY_OF_YEAR)) {
-            Date shiftDate = current.getTime();
-            // Add all possible shifts for the day
-            for (ShiftType type : ShiftType.values()) {
-                shifts.add(new Shift(shiftDate, type));
-            }
-            // Move to next day
-            current.add(Calendar.DAY_OF_MONTH, 1);
-            // After the last day, stop
-            if (current.after(end)) break;
-        }
-        return shifts;
-    }
-
-    /**
-     * Returns all possible shifts (all ShiftType values) for every day between startDate and endDate, inclusive.
-     * This always includes all shifts for the last day, regardless of the time in endDate.
-     */
     public List<Shift> getAllShiftsBetween(Date startDate, Date endDate) {
         List<Shift> shifts = new ArrayList<>();
         Calendar current = Calendar.getInstance();
@@ -225,11 +214,49 @@ public class ShiftHandler implements Handler {
         return shifts;
     }
 
+    /**
+     * Handler to delete all shifts for a specified week (Sunday–Saturday).
+     * Expects JSON body: { "weekStart": "2024-06-16" }
+     */
+    public void deleteShiftsForWeek(RoutingContext ctx) {
+        try {
+            // Permission check: only admin can reset week
+            String role = ctx.user().principal().getString("role");
+            if (!"admin".equals(role)) {
+                ctx.response().setStatusCode(403).end("Admins only");
+                return;
+            }
+            
+            JsonObject body = ctx.body().asJsonObject();
+            String weekStartStr = body.getString("weekStart");
+            if (weekStartStr == null) {
+                ctx.response().setStatusCode(400).end("Missing weekStart");
+                return;
+            }
+            Date weekStart = objectMapper.getDateFormat().parse(weekStartStr);
+            shiftService.deleteShiftsForWeek(weekStart)
+                .onSuccess(deletedCount -> {
+                    ctx.response()
+                        .setStatusCode(200)
+                        .putHeader("Content-Type", "application/json")
+                        .end(new JsonObject().put("deleted", deletedCount).encode());
+                })
+                .onFailure(err -> {
+                    logger.error("Error deleting weekly shifts", err);
+                    ctx.response().setStatusCode(500).end();
+                });
+        } catch (Exception e) {
+            logger.error("Error parsing weekStart for delete", e);
+            ctx.response().setStatusCode(400).end("Invalid weekStart");
+        }
+    }
+
     @Override
     public void addRoutes(io.vertx.ext.web.Router router) {
         router.get("/shifts").handler(this::getAllShifts);
         router.post("/shifts").handler(this::addShifts);
         router.delete("/shifts").handler(this::deleteShift);
+        router.delete("/shifts/week").handler(this::deleteShiftsForWeek); // updated
         router.post("/shifts/suggest").handler(this::suggestShiftAssignment);
     }
 }

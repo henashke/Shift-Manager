@@ -6,6 +6,7 @@ public class User {
     private String password;
     private String name;
     private int score;
+    private String role = "user"; // default to user
 
     public User() {
 
@@ -40,5 +41,13 @@ public class User {
 
     public void setPassword(String hashedPassword) {
         this.password = hashedPassword;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
     }
 }

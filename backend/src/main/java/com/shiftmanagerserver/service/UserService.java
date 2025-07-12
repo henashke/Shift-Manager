@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.Optional;
 
 public class UserService {
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
@@ -33,6 +34,30 @@ public class UserService {
         this.userDao = userDao;
         this.users = new HashSet<>();
         // Don't load users in constructor - wait for Redis to be ready
+        // ensureAdminUser(); // REMOVE THIS LINE
+    }
+
+    public void ensureAdminUser() {
+        String adminUsername = System.getenv().getOrDefault("ADMIN_USERNAME", "admin");
+        String adminPassword = System.getenv().getOrDefault("ADMIN_PASSWORD", "P@ssw0rd");
+        loadUsersAsync().onSuccess(v -> {
+            Optional<User> adminOpt = users.stream().filter(u -> u.getName().equals(adminUsername)).findFirst();
+            if (adminOpt.isEmpty()) {
+                User admin = new User();
+                admin.setName(adminUsername);
+                admin.setPassword(org.mindrot.jbcrypt.BCrypt.hashpw(adminPassword, org.mindrot.jbcrypt.BCrypt.gensalt()));
+                admin.setRole("admin");
+                admin.setScore(0);
+                users.add(admin);
+                saveUsersAsync().onSuccess(v2 ->
+                    logger.info("Admin user '{}' created from environment variable.", adminUsername)
+                ).onFailure(err ->
+                    logger.error("Failed to save admin user to Redis", err)
+                );
+            } else {
+                logger.info("Admin user '{}' already exists.", adminUsername);
+            }
+        }).onFailure(err -> logger.error("Failed to load users for admin check", err));
     }
 
     private Future<Void> loadUsersAsync() {
@@ -134,10 +159,22 @@ public class UserService {
         promise.complete(authenticated);
     }
 
-    public Future<ArrayList<User>> getAllUsers() {
-            return loadUsersAsync()
-                .map(v -> new ArrayList<>(users))
-                .onFailure(err -> logger.error("Error loading users", err));
+    public Future<List<User>> getAllUsers() {
+        Promise<List<User>> promise = Promise.promise();
+        loadUsersAsync()
+            .onSuccess(v -> {
+                // Filter out admin users from the list
+                String adminUsername = System.getenv().getOrDefault("ADMIN_USERNAME", "admin");
+                List<User> nonAdminUsers = users.stream()
+                    .filter(user -> !"admin".equals(user.getRole()) && !adminUsername.equals(user.getName()))
+                    .collect(java.util.stream.Collectors.toList());
+                promise.complete(nonAdminUsers);
+            })
+            .onFailure(err -> {
+                logger.error("Error loading users", err);
+                promise.fail(err);
+            });
+        return promise.future();
     }
 
     public Future<User> getUserById(String id) {
@@ -308,5 +345,18 @@ public class UserService {
             logger.error("Error in synchronous user retrieval", e);
             return null;
         }
+    }
+
+    public User getUserByNameSync(String username) {
+        if (!initialized) {
+            try {
+                loadUsersAsync().toCompletionStage().toCompletableFuture().get();
+                initialized = true;
+            } catch (Exception e) {
+                logger.error("Error loading users for getUserByNameSync", e);
+                return null;
+            }
+        }
+        return users.stream().filter(u -> u.getName().equals(username)).findFirst().orElse(null);
     }
 }

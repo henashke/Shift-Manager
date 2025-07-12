@@ -16,8 +16,7 @@ public class ShiftWeightSettingsHandler implements Handler {
     private final ShiftWeightSettingsService service;
     private final ObjectMapper objectMapper;
 
-    @Inject
-    public ShiftWeightSettingsHandler(ShiftWeightSettingsService service, ObjectMapper objectMapper) {
+    public ShiftWeightSettingsHandler(com.shiftmanagerserver.service.ShiftWeightSettingsService service, com.fasterxml.jackson.databind.ObjectMapper objectMapper) {
         this.service = service;
         this.objectMapper = objectMapper;
     }
@@ -40,6 +39,13 @@ public class ShiftWeightSettingsHandler implements Handler {
 
     public void handleSavePreset(RoutingContext ctx) {
         try {
+            // Permission check: only admin can save presets
+            String role = ctx.user().principal().getString("role");
+            if (!"admin".equals(role)) {
+                ctx.response().setStatusCode(403).end("Admins only");
+                return;
+            }
+            
             ShiftWeightPreset shiftWeightPreset = objectMapper.readValue(ctx.body().asString(), ShiftWeightPreset.class);
             
             service.addPreset(shiftWeightPreset)
@@ -67,6 +73,13 @@ public class ShiftWeightSettingsHandler implements Handler {
 
     public void handleSetCurrentPreset(RoutingContext ctx) {
         try {
+            // Permission check: only admin can set current preset
+            String role = ctx.user().principal().getString("role");
+            if (!"admin".equals(role)) {
+                ctx.response().setStatusCode(403).end("Admins only");
+                return;
+            }
+            
             JsonObject json = ctx.body().asJsonObject();
             String currentPreset = json.getString("currentPreset");
             if (currentPreset == null) throw new IllegalArgumentException();

@@ -28,6 +28,9 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.CorsHandler;
+import io.vertx.ext.auth.jwt.JWTAuth;
+import io.vertx.ext.auth.jwt.JWTAuthOptions;
+import io.vertx.ext.auth.PubSecKeyOptions;
 
 import java.util.Set;
 import java.util.List;
@@ -46,7 +49,8 @@ public class Module extends AbstractModule {
                 .allowedMethod(HttpMethod.POST)
                 .allowedMethod(HttpMethod.PUT)
                 .allowedMethod(HttpMethod.DELETE)
-                .allowedHeader("Content-Type"));
+                .allowedHeader("Content-Type")
+                .allowedHeader("Authorization"));
         router.route().handler(BodyHandler.create());
         return router;
     }
@@ -106,10 +110,5 @@ public class Module extends AbstractModule {
         bind(ShiftWeightSettingsService.class);
         
         // Bind handlers
-        bind(UserHandler.class);
-        bind(AuthHandler.class);
-        bind(ConstraintHandler.class);
-        bind(ShiftHandler.class);
-        bind(ShiftWeightSettingsHandler.class);
     }
 }

@@ -22,8 +22,7 @@ public class ConstraintHandler implements Handler {
     private final ConstraintService constraintService;
     private final ObjectMapper objectMapper;
 
-    @Inject
-    public ConstraintHandler(ConstraintService constraintService, ObjectMapper objectMapper) {
+    public ConstraintHandler(com.shiftmanagerserver.service.ConstraintService constraintService, com.fasterxml.jackson.databind.ObjectMapper objectMapper) {
         this.constraintService = constraintService;
         this.objectMapper = objectMapper;
     }
@@ -35,7 +34,16 @@ public class ConstraintHandler implements Handler {
 
             // Try to parse as a list first
             List<Constraint> constraints = objectMapper.readValue(body, objectMapper.getTypeFactory().constructCollectionType(List.class, Constraint.class));
-            
+
+            // Permission check: only allow if all constraints are for the logged-in user, or user is admin
+            String username = ctx.user().principal().getString("username");
+            String role = ctx.user().principal().getString("role");
+            boolean allSelf = constraints.stream().allMatch(c -> c.getUserId().equals(username));
+            if (!"admin".equals(role) && !allSelf) {
+                ctx.response().setStatusCode(403).end("Forbidden: can only edit your own constraints");
+                return;
+            }
+
             constraintService.addConstraints(constraints)
                 .onSuccess(addedConstraints -> {
                     ctx.response()
@@ -113,6 +121,14 @@ public class ConstraintHandler implements Handler {
                         .end(new JsonObject()
                                 .put("error", "Missing required fields: userId, date, and shiftType are required")
                                 .encode());
+                return;
+            }
+
+            // Permission check: only allow if user is admin or deleting their own constraint
+            String username = ctx.user().principal().getString("username");
+            String role = ctx.user().principal().getString("role");
+            if (!"admin".equals(role) && !username.equals(userId)) {
+                ctx.response().setStatusCode(403).end("Forbidden: can only delete your own constraints");
                 return;
             }
 

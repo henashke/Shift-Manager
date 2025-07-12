@@ -1,6 +1,7 @@
 import {makeAutoObservable, runInAction} from 'mobx';
 import config from '../config';
 import {ShiftType} from './ShiftStore';
+import authStore from './AuthStore';
 
 export interface ShiftWeight {
     day: string;
@@ -21,7 +22,7 @@ class ShiftWeightStore {
 
     constructor() {
         makeAutoObservable(this);
-        this.fetchPresets();
+        // Don't fetch automatically - will be called when needed
     }
 
     get currentWeights(): ShiftWeight[] {
@@ -30,9 +31,17 @@ class ShiftWeightStore {
     }
 
     async fetchPresets() {
+        // Only fetch if authenticated
+        if (!authStore.isAuthenticated()) {
+            console.log('Not authenticated, skipping presets fetch');
+            return;
+        }
+        
         this.loading = true;
         try {
-            const res = await fetch(`${config.API_BASE_URL}/shift-weight-settings`);
+            const res = await fetch(`${config.API_BASE_URL}/shift-weight-settings`, {
+                headers: authStore.getAuthHeaders()
+            });
             if (!res.ok) throw new Error('Failed to fetch shift weight presets');
             const data = await res.json();
             runInAction(() => {
@@ -52,7 +61,7 @@ class ShiftWeightStore {
         try {
             const res = await fetch(`${config.API_BASE_URL}/shift-weight-settings/preset`, {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
+                headers: authStore.getAuthHeaders(),
                 body: JSON.stringify(preset)
             });
             if (!res.ok) throw new Error('Failed to save shift weight preset');
@@ -67,7 +76,7 @@ class ShiftWeightStore {
         try {
             const res = await fetch(`${config.API_BASE_URL}/shift-weight-settings/current-preset`, {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
+                headers: authStore.getAuthHeaders(),
                 body: JSON.stringify({currentPreset: presetName})
             });
             if (res.ok) {

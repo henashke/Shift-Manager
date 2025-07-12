@@ -33,8 +33,6 @@ public class UserService {
         this.objectMapper = objectMapper;
         this.userDao = userDao;
         this.users = new HashSet<>();
-        // Don't load users in constructor - wait for Redis to be ready
-        // ensureAdminUser(); // REMOVE THIS LINE
     }
 
     public void ensureAdminUser() {

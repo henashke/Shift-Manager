@@ -34,7 +34,7 @@ COPY backend/pom.xml .
 COPY backend/src ./src
 
 # Copy frontend build output into the backend static resources
-COPY --from=frontend-builder /frontend/build ./src/main/resources/static
+COPY --from=frontend-builder /frontend/build ./src/main/resources/static/
 
 RUN mvn clean package -DskipTests
 

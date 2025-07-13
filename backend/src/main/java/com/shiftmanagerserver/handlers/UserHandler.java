@@ -134,10 +134,10 @@ public class UserHandler implements Handler {
 
     @Override
     public void addRoutes(Router router) {
-        router.get("/users").handler(this::getAllUsers);
-        router.get("/users/:id").handler(this::getUserById);
-        router.post("/users").handler(this::createUser);
-        router.put("/users/:id").handler(this::updateUser);
-        router.delete("/users/:id").handler(this::deleteUser);
+        router.get("/api/users").handler(this::getAllUsers);
+        router.get("/api/users/:id").handler(this::getUserById);
+        router.post("/api/users").handler(this::createUser);
+        router.put("/api/users/:id").handler(this::updateUser);
+        router.delete("/api/users/:id").handler(this::deleteUser);
     }
 }

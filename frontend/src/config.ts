@@ -1,14 +1,14 @@
 // src/config.ts
 
 // Determine the API base URL
-let apiBaseUrl = 'http://localhost:8080'; // Default for development
+let apiBaseUrl = 'http://localhost:8080/api'; // Default for development
 
 if (process.env.NODE_ENV === 'production') {
   // In production, use relative URLs (empty string)
-  apiBaseUrl = '';
+  apiBaseUrl = '' + '/api';
 } else if (process.env.REACT_APP_API_BASE_URL !== undefined) {
   // Use custom API URL if provided
-  apiBaseUrl = process.env.REACT_APP_API_BASE_URL;
+  apiBaseUrl = process.env.REACT_APP_API_BASE_URL + '/api';
 }
 
 const config = {

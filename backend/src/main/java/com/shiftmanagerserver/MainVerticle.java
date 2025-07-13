@@ -113,18 +113,22 @@ public class MainVerticle extends AbstractVerticle {
         
         // Protect all API routes except auth using custom JWT handler
         JWTAuthHandler jwtAuthHandler = new JWTAuthHandler(jwtService);
-        router.route("/users*").handler(jwtAuthHandler);
-        router.route("/constraints*").handler(jwtAuthHandler);
-        router.route("/shifts*").handler(jwtAuthHandler);
-        router.route("/shift-weight-settings*").handler(jwtAuthHandler);
+        router.route("/api/users*").handler(jwtAuthHandler);
+        router.route("/api/constraints*").handler(jwtAuthHandler);
+        router.route("/api/shifts*").handler(jwtAuthHandler);
+        router.route("/api/shift-weight-settings*").handler(jwtAuthHandler);
         
         userHandler.addRoutes(router);
         constraintHandler.addRoutes(router);
         shiftHandler.addRoutes(router);
         shiftWeightSettingsHandler.addRoutes(router);
-        
-        // Serve static files from root for SPA
+
+        // Serve static files
         logger.info("Setting up static file handler for SPA");
-        router.route("/*").handler(StaticHandler.create("static").setIndexPage("index.html"));
+        router.route("/static/*").handler(StaticHandler.create("static"));
+
+        router.route().last().handler(ctx -> {
+            ctx.response().sendFile("static/index.html");
+        });
     }
 }

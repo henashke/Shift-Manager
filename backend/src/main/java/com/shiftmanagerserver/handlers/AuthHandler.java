@@ -130,7 +130,7 @@ public class AuthHandler implements Handler {
 
     @Override
     public void addRoutes(Router router) {
-        router.post("/auth/signup").handler(this::handleSignup);
-        router.post("/auth/login").handler(this::handleLogin);
+        router.post("/api/auth/signup").handler(this::handleSignup);
+        router.post("/api/auth/login").handler(this::handleLogin);
     }
 }

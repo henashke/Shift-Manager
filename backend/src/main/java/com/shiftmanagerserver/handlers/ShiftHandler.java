@@ -253,10 +253,10 @@ public class ShiftHandler implements Handler {
 
     @Override
     public void addRoutes(io.vertx.ext.web.Router router) {
-        router.get("/shifts").handler(this::getAllShifts);
-        router.post("/shifts").handler(this::addShifts);
-        router.delete("/shifts").handler(this::deleteShift);
-        router.delete("/shifts/week").handler(this::deleteShiftsForWeek); // updated
-        router.post("/shifts/suggest").handler(this::suggestShiftAssignment);
+        router.get("/api/shifts").handler(this::getAllShifts);
+        router.post("/api/shifts").handler(this::addShifts);
+        router.delete("/api/shifts").handler(this::deleteShift);
+        router.delete("/api/shifts/week").handler(this::deleteShiftsForWeek); // updated
+        router.post("/api/shifts/suggest").handler(this::suggestShiftAssignment);
     }
 }

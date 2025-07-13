@@ -123,8 +123,8 @@ public class ShiftWeightSettingsHandler implements Handler {
 
     @Override
     public void addRoutes(Router router) {
-        router.get("/shift-weight-settings").handler(this::handleGetSettings);
-        router.post("/shift-weight-settings/preset").handler(this::handleSavePreset);
-        router.post("/shift-weight-settings/current-preset").handler(this::handleSetCurrentPreset);
+        router.get("/api/shift-weight-settings").handler(this::handleGetSettings);
+        router.post("/api/shift-weight-settings/preset").handler(this::handleSavePreset);
+        router.post("/api/shift-weight-settings/current-preset").handler(this::handleSetCurrentPreset);
     }
 }

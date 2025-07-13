@@ -50,19 +50,6 @@ const App: React.FC = observer(() => {
         }
     }, [navigate]);
 
-    // Separate effect for data fetching when authenticated
-    useEffect(() => {
-        if (authStore.isAuthenticated() && window.location.pathname !== '/login') {
-            // Trigger data fetching when authenticated and not on login page
-            setTimeout(() => {
-                usersStore.fetchUsers();
-                constraintStore.fetchConstraint();
-                shiftStore.fetchShifts();
-                shiftWeightStore.fetchPresets();
-            }, 100); // Small delay to ensure authentication state is set
-        }
-    }, [authStore.isAuthenticated(), window.location.pathname]);
-
     const theme = createTheme({
         palette: {
             mode: darkMode ? 'dark' : 'light',

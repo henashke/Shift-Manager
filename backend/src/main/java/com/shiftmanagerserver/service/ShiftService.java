@@ -88,19 +88,14 @@ public class ShiftService {
     public Future<Void> addShifts(List<AssignedShift> newShifts) {
         Promise<Void> promise = Promise.promise();
 
-        if (!initialized) {
-            loadShiftsAsync()
-                    .onSuccess(v -> {
-                        initialized = true;
-                        proceedWithAddShifts(newShifts, promise);
-                    })
-                    .onFailure(err -> {
-                        logger.error("Error loading shifts", err);
-                        promise.fail(err);
-                    });
-        } else {
-            proceedWithAddShifts(newShifts, promise);
-        }
+        loadShiftsAsync()
+                .onSuccess(v -> {
+                    proceedWithAddShifts(newShifts, promise);
+                })
+                .onFailure(err -> {
+                    logger.error("Error loading shifts", err);
+                    promise.fail(err);
+                });
 
         return promise.future();
     }

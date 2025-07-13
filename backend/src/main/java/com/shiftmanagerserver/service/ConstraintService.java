@@ -100,20 +100,15 @@ public class ConstraintService {
 
     public Future<Boolean> deleteConstraint(String userId, Shift shift) {
         Promise<Boolean> promise = Promise.promise();
-        
-        if (!initialized) {
-            loadConstraintsAsync()
+
+        loadConstraintsAsync()
                 .onSuccess(v -> {
-                    initialized = true;
                     proceedWithDeleteConstraint(userId, shift, promise);
                 })
                 .onFailure(err -> {
                     logger.error("Error loading constraints", err);
                     promise.fail(err);
                 });
-        } else {
-            proceedWithDeleteConstraint(userId, shift, promise);
-        }
             
         return promise.future();
     }

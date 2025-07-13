@@ -198,9 +198,9 @@ public class ConstraintHandler implements Handler {
 
     @Override
     public void addRoutes(Router router) {
-        router.post("/constraints").handler(this::handleCreateConstraint);
-        router.get("/constraints").handler(this::handleGetAllConstraints);
-        router.get("/constraints/user/:userId").handler(this::handleGetConstraintsByUserId);
-        router.delete("/constraints").handler(this::handleDeleteConstraint);
+        router.post("/api/constraints").handler(this::handleCreateConstraint);
+        router.get("/api/constraints").handler(this::handleGetAllConstraints);
+        router.get("/api/constraints/user/:userId").handler(this::handleGetConstraintsByUserId);
+        router.delete("/api/constraints").handler(this::handleDeleteConstraint);
     }
 }

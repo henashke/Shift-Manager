@@ -109,7 +109,7 @@ public class MainVerticle extends AbstractVerticle {
                             AuthHandler authHandler, UserHandler userHandler, ConstraintHandler constraintHandler,
                             ShiftHandler shiftHandler, ShiftWeightSettingsHandler shiftWeightSettingsHandler) {
 
-        router.route("frontend/static/*").handler(StaticHandler.create("static"));
+        router.route("static/*").handler(StaticHandler.create("static"));
 
         // API routes first
         authHandler.addRoutes(router); // login/signup are public

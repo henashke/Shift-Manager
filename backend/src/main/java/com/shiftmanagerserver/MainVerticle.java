@@ -108,6 +108,9 @@ public class MainVerticle extends AbstractVerticle {
     private void bindRoutes(Router router,
                             AuthHandler authHandler, UserHandler userHandler, ConstraintHandler constraintHandler,
                             ShiftHandler shiftHandler, ShiftWeightSettingsHandler shiftWeightSettingsHandler) {
+
+        router.route("frontend/static/*").handler(StaticHandler.create("static"));
+
         // API routes first
         authHandler.addRoutes(router); // login/signup are public
         
@@ -123,10 +126,5 @@ public class MainVerticle extends AbstractVerticle {
         shiftHandler.addRoutes(router);
         shiftWeightSettingsHandler.addRoutes(router);
 
-        router.route("/*").handler(StaticHandler.create());
-
-        router.route().handler(ctx -> {
-            ctx.response().sendFile("index.html");
-        });
     }
 }

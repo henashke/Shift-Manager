@@ -1,7 +1,6 @@
 package com.shiftmanagerserver.handlers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.inject.Inject;
 import com.shiftmanagerserver.entities.User;
 import com.shiftmanagerserver.service.UserService;
 import io.vertx.core.json.JsonObject;

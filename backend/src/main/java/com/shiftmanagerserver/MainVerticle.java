@@ -125,10 +125,12 @@ public class MainVerticle extends AbstractVerticle {
         shiftHandler.addRoutes(router);
         shiftWeightSettingsHandler.addRoutes(router);
 
-        router.route("/*").handler(StaticHandler.create());
+        // Serve static files from the 'static' directory
+        router.route("/*").handler(StaticHandler.create("static"));
 
-        router.route().handler(ctx -> {
-            ctx.response().sendFile("index.html");
+        // Fallback: serve index.html for SPA routes (only if no static file matched)
+        router.route().last().handler(ctx -> {
+            ctx.response().sendFile("static/index.html");
         });
     }
 }

@@ -150,7 +150,13 @@ export class ShiftStore {
                 if (response.status === 403) {
                     notificationStore.showUnauthorizedError();
                 } else {
-                    throw new Error('Failed to save shifts');
+                    // Try to show backend error message if available
+                    let errorMsg = 'Failed to save shifts';
+                    try {
+                        const data = await response.json();
+                        if (data && data.error) errorMsg = data.error;
+                    } catch {}
+                    notificationStore.showError(errorMsg);
                 }
                 return;
             }
@@ -161,6 +167,7 @@ export class ShiftStore {
             runInAction(() => {
                 this.loading = false;
             });
+            notificationStore.showError('Failed to save shifts');
             console.error(error);
         }
     };

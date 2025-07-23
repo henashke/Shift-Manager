@@ -21,6 +21,8 @@ const ConstraintTab: React.FC = observer(() => {
         constraintStore.fetchConstraint();
     }, []);
 
+    console.log("ConstraintTab constraints:", constraintStore.constraints);
+
     const onAssignedConstraintDragStart = (e: React.DragEvent, type: ConstraintType, fromShift?: Shift) => {
         setIsDragged(true);
         setDragData(e, type, fromShift);

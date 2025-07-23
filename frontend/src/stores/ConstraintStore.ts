@@ -135,6 +135,7 @@ class ConstraintStore {
             ...c,
             date: new Date(c.shift.date)
         }));
+        console.log("Fetched constraints:", this.constraints);
     }
 }
 

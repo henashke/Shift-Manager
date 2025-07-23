@@ -61,14 +61,71 @@ public class ShiftHandler implements Handler {
                 ctx.response().setStatusCode(403).end("Admins only");
                 return;
             }
-            
             List<AssignedShift> shifts = objectMapper.readValue(ctx.body().asString(), objectMapper.getTypeFactory().constructCollectionType(List.class, AssignedShift.class));
-            shiftService.addShifts(shifts)
-                .onSuccess(v -> ctx.response().setStatusCode(201).end())
-                .onFailure(err -> {
-                    logger.error("Error adding multiple shifts", err);
-                    ctx.response().setStatusCode(400).end();
-                });
+
+            // Collect all usernames that are being assigned
+            Set<String> usernames = new HashSet<>();
+            for (AssignedShift assignedShift : shifts) {
+                String username = assignedShift.getAssignedUsername();
+                if (username != null && !username.isEmpty()) {
+                    usernames.add(username);
+                }
+            }
+
+            // For each username, fetch constraints asynchronously
+            List<Future<?>> constraintFutures = new ArrayList<>();
+            Map<String, AssignedShift> userToShift = new HashMap<>();
+            for (AssignedShift assignedShift : shifts) {
+                String username = assignedShift.getAssignedUsername();
+                if (username != null && !username.isEmpty()) {
+                    constraintFutures.add(constraintService.getConstraintsByUserId(username));
+                    userToShift.put(username + assignedShift.getDate() + assignedShift.getType(), assignedShift);
+                }
+            }
+
+            if (constraintFutures.isEmpty()) {
+                // No assignments, just proceed
+                shiftService.addShifts(shifts)
+                    .onSuccess(v -> ctx.response().setStatusCode(201).end())
+                    .onFailure(err -> {
+                        logger.error("Error adding multiple shifts", err);
+                        ctx.response().setStatusCode(400).end();
+                    });
+                return;
+            }
+
+            Future.all(constraintFutures).onSuccess(results -> {
+                // Flatten all constraints and check for CANT
+                int idx = 0;
+                for (AssignedShift assignedShift : shifts) {
+                    String username = assignedShift.getAssignedUsername();
+                    if (username != null && !username.isEmpty()) {
+                        @SuppressWarnings("unchecked")
+                        List<com.shiftmanagerserver.entities.Constraint> constraints = (List<com.shiftmanagerserver.entities.Constraint>) results.result().list().get(idx);
+                        boolean hasCant = constraints.stream().anyMatch(c ->
+                            c.getConstraintType() == ConstraintType.CANT &&
+                            c.getShift().equals(assignedShift)
+                        );
+                        if (hasCant) {
+                            ctx.response().setStatusCode(400)
+                                .putHeader("Content-Type", "application/json")
+                                .end(new JsonObject().put("error", "יש ל\"" + username + "\" אילוץ במשמרת הזו").encode());
+                            return;
+                        }
+                        idx++;
+                    }
+                }
+                // No CANT constraints found, proceed
+                shiftService.addShifts(shifts)
+                    .onSuccess(v -> ctx.response().setStatusCode(201).end())
+                    .onFailure(err -> {
+                        logger.error("Error adding multiple shifts", err);
+                        ctx.response().setStatusCode(400).end();
+                    });
+            }).onFailure(err -> {
+                logger.error("Error fetching constraints for users", err);
+                ctx.response().setStatusCode(500).end("Error checking constraints");
+            });
         } catch (Exception e) {
             logger.error("Error parsing shift data", e);
             ctx.response().setStatusCode(400).end("Invalid shift data");

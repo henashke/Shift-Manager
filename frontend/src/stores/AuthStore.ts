@@ -63,6 +63,26 @@ class AuthStore {
   isAdmin(): boolean {
     return this.role === 'admin';
   }
+
+  // Helper to decode JWT and check expiration
+  isTokenExpired(): boolean {
+    if (!this.token) return true;
+    try {
+      const payload = JSON.parse(atob(this.token.split('.')[1]));
+      if (!payload.exp) return false;
+      // exp is in seconds, Date.now() in ms
+      return Date.now() >= payload.exp * 1000;
+    } catch (e) {
+      return true;
+    }
+  }
+
+  ensureValidSession(navigate?: (path: string) => void) {
+    if (this.isTokenExpired()) {
+      this.logout();
+      if (navigate) navigate('/login');
+    }
+  }
 }
 
 const authStore = new AuthStore();

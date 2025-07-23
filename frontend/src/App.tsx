@@ -43,6 +43,7 @@ const App: React.FC = observer(() => {
 
     // Check authentication on app load and trigger data fetching
     useEffect(() => {
+        authStore.ensureValidSession(navigate);
         if (!authStore.isAuthenticated() && window.location.pathname !== '/login') {
             navigate('/login');
         } else if (authStore.isAuthenticated() && window.location.pathname === '/login') {

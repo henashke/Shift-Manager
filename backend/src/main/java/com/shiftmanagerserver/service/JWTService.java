@@ -14,7 +14,7 @@ import java.util.Date;
 public class JWTService {
     private static final Logger logger = LoggerFactory.getLogger(JWTService.class);
     private final SecretKey secretKey;
-    private static final long EXPIRATION_TIME = 24 * 60 * 60 * 1000; // 24 hours
+    private static final long EXPIRATION_TIME = 48 * 60 * 60 * 1000; // 48 hours
 
     public JWTService(String secret) {
         // Create a secret key from the provided secret

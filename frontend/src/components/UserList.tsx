@@ -11,7 +11,7 @@ import EditUser from "./dialogs/EditUser";
 import authStore from "../stores/AuthStore";
 import notificationStore from "../stores/NotificationStore";
 
-const UserList: React.FC<{ isDragged?: boolean }> = observer(({ isDragged }) => {
+const UserList: React.FC<{ isDragged?: boolean, setIsDragged?: (val: boolean) => void }> = observer(({ isDragged, setIsDragged }) => {
     const {users} = usersStore;
     const [addDialogOpen, setAddDialogOpen] = useState(false);
     const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -31,6 +31,7 @@ const UserList: React.FC<{ isDragged?: boolean }> = observer(({ isDragged }) => 
         } catch (e) {
             console.error("Error: " + e);
         }
+        if (setIsDragged) setIsDragged(false);
     };
     const onDragStart = (e: React.DragEvent, user: User, fromShift?: Shift) => {
         e.dataTransfer.setData('application/json', JSON.stringify({user: user, fromShift: fromShift || null}));

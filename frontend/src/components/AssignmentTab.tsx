@@ -201,7 +201,7 @@ const AssignmentTab: React.FC = observer(() => {
                         onCancel={() => shiftStore.pendingAssignedShifts = []}
                         itemName="שיבוץ"
             />
-            <UserList isDragged={isDragged}/>
+            <UserList isDragged={isDragged} setIsDragged={setIsDragged}/>
         </Container>
     );
 });

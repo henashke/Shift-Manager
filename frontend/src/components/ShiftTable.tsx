@@ -13,9 +13,9 @@ import {
     TableContainer,
     TableHead,
     TableRow,
-    Typography,
+    Typography, useMediaQuery, useTheme
 } from '@mui/material';
-import store, {sameShift, Shift} from '../stores/ShiftStore';
+import store, {sameShift, Shift, ShiftType} from '../stores/ShiftStore';
 import AssignToShiftDialog from './AssignToShiftDialog';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
@@ -36,7 +36,7 @@ interface ShiftTableProps<T> {
     isPendingItems?: boolean;
     onSave?: () => void;
     onCancel?: () => void;
-    pendingItem?: (shift: Shift) => T | undefined;
+    retreivePendingItem?: (shift: Shift) => T | undefined;
     onDropHandler?: (e: React.DragEvent, shift: Shift) => void;
     onDragEndHandler?: () => void;
     onDragStartHandler?: (e: React.DragEvent, draggedElement: T, fromShift?: Shift) => void;
@@ -54,13 +54,15 @@ function ShiftTable<T>({
                            isPendingItems,
                            onSave,
                            onCancel,
-                           pendingItem,
+                           retreivePendingItem,
                            onDropHandler,
                            onDragStartHandler,
                            onDragEndHandler,
                            itemName,
-                           requireAdmin = true
+                           requireAdmin = true,
                        }: ShiftTableProps<T>) {
+    const theme = useTheme();
+    const isNarrowScreen = useMediaQuery(theme.breakpoints.down('md')); // Switch to vertical on screens smaller than 'md' breakpoint
     const {weekDates} = store;
     const [assignDialogOpen, setAssignDialogOpen] = useState(false);
     const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
@@ -135,16 +137,116 @@ function ShiftTable<T>({
         handleCloseContextMenu();
     };
 
-    // Helper to get the assigned item, prioritizing pendingItem prop if provided
     const getPendingOrAssignedItem = (shift: Shift) => {
-        if (pendingItem) {
-            const pending = pendingItem(shift);
+        if (retreivePendingItem) {
+            const pending = retreivePendingItem(shift);
             if (pending) return pending;
         }
         return retrieveItemFromShift(shift);
     };
 
+    const WeekDayHeaderTableCell = ({date}: { date: Date }) => (
+        <TableCell key={date.toISOString()} align="center">
+            <Typography variant={"h6"}>{days[date.getDay()]}</Typography>
+            <Typography>{date.toLocaleDateString('he-IL', {
+                day: '2-digit',
+                month: '2-digit'
+            })}</Typography>
+        </TableCell>
+    );
+
+    const ShiftTypeHeaderTableCell = ({shiftType}: { shiftType: ShiftType }) => (
+        <TableCell key={shiftType.toString()} align="center">
+            <Typography variant={"h6"}>{shiftType}</Typography>
+        </TableCell>
+    );
+
+    const verticalTableHeader = <TableHead>
+        <TableRow>
+            <TableCell></TableCell>
+            {shiftTypes.map((shiftType, i) => (
+                <ShiftTypeHeaderTableCell shiftType={shiftType}/>
+            ))}
+        </TableRow>
+    </TableHead>
+
+    const horizontalTableHeader = <TableHead>
+        <TableRow>
+            <TableCell></TableCell>
+            {weekDates.map((date) => (
+                <WeekDayHeaderTableCell date={date}/>
+            ))}
+        </TableRow>
+    </TableHead>
+
+    const tableHeader = isNarrowScreen ? verticalTableHeader : horizontalTableHeader;
+
+    const createTableCell = (date: Date, shiftType: ShiftType) => {
+        const shift = {date: date, type: shiftType};
+        const item = getPendingOrAssignedItem(shift);
+        const isPending = retreivePendingItem?.(shift) !== undefined;
+        return (
+            <TableCell
+                key={date.toISOString() + shiftType}
+                align="center"
+                onDrop={e => onDrop(e, shift)}
+                onDragOver={onDragOver}
+                onClick={() => shift && handleCellClick(shift)}
+                onContextMenu={e => shift && handleContextMenu(e, shift)}
+                sx={{
+                    minHeight: 48,
+                    borderRadius: 2,
+                    color: 'common.white',
+                    cursor: 'pointer'
+                }}
+            >
+                {item ? (
+                    <Box
+                        sx={{
+                            background: theme => isPending ? theme.palette.secondary.main : theme.palette.primary.main,
+                            color: 'common.white',
+                            borderRadius: 1,
+                            px: 1,
+                            py: 0.5,
+                            fontWeight: 700
+                        }}
+                        draggable
+                        onDragStart={e => onDragStart(e, item, shift)}
+                        onDragEnd={onDragEndHandler}
+                    >
+                        {getItemName(item)}
+                    </Box>
+                ) : (
+                    <Typography variant="body1" sx={{color: '#7d7bf2'}}>כונן
+                        משובץ</Typography>
+                )}
+            </TableCell>
+        );
+    }
+
+    const verticalTableBody = <TableBody>
+        {weekDates.map((date) => (
+            <TableRow key={date.toISOString()}>
+                <WeekDayHeaderTableCell date={date}/>
+                {shiftTypes.map(shiftType => createTableCell(date, shiftType))}
+            </TableRow>
+        ))}
+    </TableBody>
+
+    const horizontalTableBody = <TableBody>
+        {shiftTypes.map((shiftType, i) => (
+            <TableRow key={shiftType}>
+                <ShiftTypeHeaderTableCell shiftType={shiftType}/>
+                {weekDates.map((date) => createTableCell(date, shiftType))}
+            </TableRow>
+        ))}
+    </TableBody>
+
+    const tableBody = isNarrowScreen ? verticalTableBody : horizontalTableBody
+
+
     return (
+
         <Box sx={{display: 'flex', gap: 2, height: '100%', mb: 4}}>
             {
                 isPendingItems && onSave && onCancel &&
@@ -157,73 +259,8 @@ function ShiftTable<T>({
             <TableContainer component={Paper} sx={{borderRadius: 3, boxShadow: 3, direction: 'rtl', height: '100%'}}
                             dir="rtl">
                 <Table className="shift-table">
-                    <TableHead>
-                        <TableRow>
-                            <TableCell></TableCell>
-                            {weekDates.map((date, i) => (
-                                <TableCell key={i} align="center">
-                                    <Typography variant={"h6"}>{days[date.getDay()]}</Typography>
-                                    <Typography>{date.toLocaleDateString('he-IL', {
-                                        day: '2-digit',
-                                        month: '2-digit'
-                                    })}</Typography>
-                                </TableCell>
-                            ))}
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {shiftTypes.map(shiftType => (
-                            <TableRow key={shiftType}>
-                                <TableCell>
-                                    <Typography variant={"body1"}>
-                                        {shiftType}
-                                    </Typography>
-                                </TableCell>
-                                {weekDates.map((date) => {
-                                    const shift = {date: date, type: shiftType};
-                                    const item = getPendingOrAssignedItem(shift);
-                                    const isPending = pendingItem?.(shift) !== undefined;
-                                    return (
-                                        <TableCell
-                                            key={date.toISOString() + shiftType}
-                                            align="center"
-                                            onDrop={e => onDrop(e, shift)}
-                                            onDragOver={onDragOver}
-                                            onClick={() => shift && handleCellClick(shift)}
-                                            onContextMenu={e => shift && handleContextMenu(e, shift)}
-                                            sx={{
-                                                minHeight: 48,
-                                                borderRadius: 2,
-                                                color: 'common.white',
-                                                cursor: 'pointer'
-                                            }}
-                                        >
-                                            {item ? (
-                                                <Box
-                                                    sx={{
-                                                        background: theme => isPending ? theme.palette.secondary.main : theme.palette.primary.main,
-                                                        color: 'common.white',
-                                                        borderRadius: 1,
-                                                        px: 1,
-                                                        py: 0.5,
-                                                        fontWeight: 700
-                                                    }}
-                                                    draggable
-                                                    onDragStart={e => onDragStart(e, item, shift)}
-                                                    onDragEnd={onDragEndHandler}
-                                                >
-                                                    {getItemName(item)}
-                                                </Box>
-                                            ) : (
-                                                <Typography variant="body1" sx={{color: '#7d7bf2'}}>כונן
-                                                    משובץ</Typography>
-                                            )}
-                                        </TableCell>
-                                    );
-                                })}
-                            </TableRow>
-                        ))}
-                    </TableBody>
+                    {tableHeader}
+                    {tableBody}
                 </Table>
                 <AssignToShiftDialog
                     open={assignDialogOpen}

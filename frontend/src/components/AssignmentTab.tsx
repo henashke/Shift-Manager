@@ -191,7 +191,7 @@ const AssignmentTab: React.FC = observer(() => {
                             assignedUsername: user.name
                         })}
                         unassignHandler={shift => shiftStore.unassignUser(shift)}
-                        pendingItem={getPendingUserFromShift}
+                        retreivePendingItem={getPendingUserFromShift}
                         retrieveItemFromShift={getUserFromShift}
                         getItemName={u => u.name}
                         itemList={users}

@@ -136,7 +136,7 @@ const ConstraintTab: React.FC = observer(() => {
                             constraintStore.removeConstraint(shift, selectedUser);
                         }}
                         getItemName={(item: ConstraintType) => item.toString()}
-                        pendingItem={getPendingConstraintTypeFromShift}
+                        retreivePendingItem={getPendingConstraintTypeFromShift}
                         onDragStartHandler={onAssignedConstraintDragStart}
                         onDragEndHandler={onDragEnd}
                         onDropHandler={handleShiftTableDrop}

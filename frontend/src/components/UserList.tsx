@@ -85,6 +85,7 @@ const UserList: React.FC<{ isDragged?: boolean, setIsDragged?: (val: boolean) =>
                 getLabel={u => u.name}
                 onDragStart={onDragStart}
                 onDrop={deleteAreaOnDropHandler}
+                onItemClick={(user) => handleInfoDialogOpen(user)}
                 contextMenuItems={(user) => [
                     {label: 'פרטי משתמש', onClick: () => handleInfoDialogOpen(user)},
                     {label: 'ערוך', onClick: () => handleEditDialogOpen(user)},

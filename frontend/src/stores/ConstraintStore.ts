@@ -1,10 +1,14 @@
-// You can expand this store with actions to add/remove constraints as needed
 import {makeAutoObservable} from 'mobx';
-import {ConstraintType} from "../components/ConstraintTypeList";
 import {sameShift, Shift} from "./ShiftStore";
 import config from "../config";
 import authStore from "./AuthStore";
 import notificationStore from "./NotificationStore";
+
+export enum ConstraintType {
+    CANT = 'לא יכול',
+    PREFERS_NOT = 'מעדיף שלא',
+    PREFERS = 'מעדיף'
+}
 
 export type Constraint = {
     userId: string;
@@ -18,7 +22,6 @@ class ConstraintStore {
 
     constructor() {
         makeAutoObservable(this);
-        // Don't fetch automatically - will be called when needed
     }
 
     addConstraintPending(constraint: Constraint) {
@@ -118,7 +121,6 @@ class ConstraintStore {
     }
 
     async fetchConstraint() {
-        // Only fetch if authenticated
         if (!authStore.isAuthenticated()) {
             console.log('Not authenticated, skipping constraints fetch');
             return;

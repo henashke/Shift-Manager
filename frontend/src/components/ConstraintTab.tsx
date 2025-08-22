@@ -2,12 +2,11 @@ import React, {useEffect, useState} from 'react';
 import {observer} from 'mobx-react-lite';
 import CalendarNavigation from './CalendarNavigation';
 import DraggableList from './DraggableList';
-import {ConstraintType} from './ConstraintTypeList';
 import ShiftTable from './ShiftTable';
 import {Box, Container, FormControl, MenuItem, Select, Typography} from "@mui/material";
 import {sameShift, Shift, User} from '../stores/ShiftStore';
 import authStore from "../stores/AuthStore";
-import {Constraint, constraintStore} from "../stores/ConstraintStore";
+import {Constraint, constraintStore, ConstraintType} from "../stores/ConstraintStore";
 import usersStore from "../stores/UsersStore";
 import notificationStore from "../stores/NotificationStore";
 
@@ -136,7 +135,7 @@ const ConstraintTab: React.FC = observer(() => {
                             constraintStore.removeConstraint(shift, selectedUser);
                         }}
                         getItemName={(item: ConstraintType) => item.toString()}
-                        pendingItem={getPendingConstraintTypeFromShift}
+                        retreivePendingItem={getPendingConstraintTypeFromShift}
                         onDragStartHandler={onAssignedConstraintDragStart}
                         onDragEndHandler={onDragEnd}
                         onDropHandler={handleShiftTableDrop}

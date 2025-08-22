@@ -42,16 +42,13 @@ const LoginSignup: React.FC = observer(() => {
       if (!res.ok) throw new Error(data.error || data.message || 'An error occurred');
       
       if (tab === 0) {
-        // Login response should include token and role
         if (data.token && data.username && data.role) {
           authStore.setAuth(data.username, data.token, data.role);
-          // Navigate to home page after successful login
           navigate('/');
         } else {
           throw new Error('Invalid login response');
         }
       } else {
-        // Signup response
         setSuccess('הרשמה הושלמה בהצלחה! אנא התחבר למערכת.');
       }
     } catch (err: any) {

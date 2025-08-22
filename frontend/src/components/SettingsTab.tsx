@@ -55,14 +55,12 @@ const SettingsTab: React.FC = observer(() => {
         }
     }, [preset, shiftWeightStore.presets]);
 
-    // When preset or store changes, update pendingPreset
     useEffect(() => {
         if (preset) {
             shiftWeightStore.setPendingPresetFromName(preset);
         }
     }, [preset]);
 
-    // When pendingPreset changes, update settings
     useEffect(() => {
         if (shiftWeightStore.pendingPreset) {
             const newSettings: Record<string, Record<ShiftType, string>> = {};

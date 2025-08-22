@@ -1,9 +1,14 @@
 import {makeAutoObservable} from 'mobx';
-import {ConstraintType} from "../components/ConstraintTypeList";
 import {sameShift, Shift} from "./ShiftStore";
 import config from "../config";
 import authStore from "./AuthStore";
 import notificationStore from "./NotificationStore";
+
+export enum ConstraintType {
+    CANT = 'לא יכול',
+    PREFERS_NOT = 'מעדיף שלא',
+    PREFERS = 'מעדיף'
+}
 
 export type Constraint = {
     userId: string;

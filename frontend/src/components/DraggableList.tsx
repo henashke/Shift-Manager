@@ -9,6 +9,7 @@ interface DraggableListProps<T> {
     onDragStart: (e: React.DragEvent, item: T) => void;
     onDrop?: (e: React.DragEvent) => void;
     contextMenuItems?: (item: T, close: () => void) => { label: string, onClick: () => void }[];
+    onItemClick?: (item: T) => void;
     renderAddButton?: () => React.ReactNode;
     isDragged?: boolean;
 }
@@ -20,6 +21,7 @@ function DraggableList<T>({
                               onDragStart,
                               onDrop,
                               contextMenuItems,
+                              onItemClick,
                               renderAddButton,
                               isDragged
                           }: DraggableListProps<T>) {
@@ -85,6 +87,7 @@ function DraggableList<T>({
                                 key={getKey(item)}
                                 draggable
                                 onDragStart={e => onDragStart(e, item)}
+                                onClick={onItemClick ? () => onItemClick(item) : undefined}
                                 onContextMenu={contextMenuItems ? e => handleContextMenu(e, item) : undefined}
                                 sx={{
                                     background: theme => theme.palette.primary.main,

@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react';
-import CalendarNavigation from '../CalendarNavigation';
-import ShiftTable from '../ShiftTable';
-import UserList from '../UserList';
+import CalendarNavigation from '../shiftTable/CalendarNavigation';
+import ShiftTable from '../shiftTable/ShiftTable';
+import UserList from '../draggableLists/UserList';
 import {Alert, Box, Container, Snackbar} from "@mui/material";
 import usersStore from "../../stores/UsersStore";
 import {observer} from 'mobx-react-lite';
@@ -176,11 +176,11 @@ const AssignmentTab: React.FC = observer(() => {
             <ChangeAssignedShiftPresetDialog open={isChangePresetDialogOpen}
                                              onClose={() => setIsChangePresetDialogOpen(false)}
                                              assignedShift={selectedShift ?? {
-                                           assignedUsername: '',
-                                           date: new Date(),
-                                           type: 'יום',
-                                           preset: {name: '', weights: []}
-                                       }}
+                                                 assignedUsername: '',
+                                                 date: new Date(),
+                                                 type: 'יום',
+                                                 preset: {name: '', weights: []}
+                                             }}
             />
             <UserList isDragged={isDragged} setIsDragged={setIsDragged}/>
         </Container>

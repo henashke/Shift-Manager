@@ -1,8 +1,8 @@
 import React from 'react';
 import {observer} from 'mobx-react-lite';
 import {Box, Button, Typography} from '@mui/material';
-import store from '../stores/ShiftStore';
-import BasicButton from "./basicSharedComponents/BasicButton";
+import store from '../../stores/ShiftStore';
+import BasicButton from "../basicSharedComponents/BasicButton";
 
 const CalendarNavigation: React.FC = observer(() => {
     const weekDates = store.weekDates;

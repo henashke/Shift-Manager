@@ -1,7 +1,7 @@
 // src/config.ts
 
 // Determine the API base URL
-let apiBaseUrl = 'http://localhost:8080/api'; // Default for development
+let apiBaseUrl = 'http://192.168.1.44:8080/api'; // Default for development
 
 if (process.env.NODE_ENV === 'production') {
   // In production, use relative URLs (empty string)

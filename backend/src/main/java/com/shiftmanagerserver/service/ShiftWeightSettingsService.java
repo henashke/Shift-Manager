@@ -11,6 +11,8 @@ import io.vertx.core.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 public class ShiftWeightSettingsService {
@@ -22,7 +24,7 @@ public class ShiftWeightSettingsService {
 
     @Inject
     public ShiftWeightSettingsService(ObjectMapper objectMapper,
-                                    @Named("shift.weight.settings.dao") AsyncIO<ShiftWeightSettings, ShiftWeightSettings> settingsDao) {
+                                      @Named("shift.weight.settings.dao") AsyncIO<ShiftWeightSettings, ShiftWeightSettings> settingsDao) {
         this.objectMapper = objectMapper;
         this.settingsDao = settingsDao;
         this.settings = new ShiftWeightSettings();
@@ -31,81 +33,64 @@ public class ShiftWeightSettingsService {
 
     private Future<Void> loadSettingsAsync() {
         Promise<Void> promise = Promise.promise();
-        
+
         settingsDao.read()
-            .onSuccess(loadedSettings -> {
-                this.settings = loadedSettings;
-                logger.info("Successfully loaded shift weight settings from Redis");
-                promise.complete();
-            })
-            .onFailure(err -> {
-                logger.error("Error loading shift weight settings from Redis", err);
-                this.settings = new ShiftWeightSettings();
-                promise.complete(); // Complete with default settings rather than fail
-            });
-            
+                .onSuccess(loadedSettings -> {
+                    this.settings = loadedSettings;
+                    logger.info("Successfully loaded shift weight settings from Redis");
+                    promise.complete();
+                })
+                .onFailure(err -> {
+                    logger.error("Error loading shift weight settings from Redis", err);
+                    this.settings = new ShiftWeightSettings();
+                    promise.complete(); // Complete with default settings rather than fail
+                });
+
         return promise.future();
     }
 
     private Future<Void> saveSettingsAsync() {
         return settingsDao.write(settings)
-            .onSuccess(v -> logger.info("Successfully saved shift weight settings to Redis"))
-            .onFailure(err -> logger.error("Error saving shift weight settings to Redis", err));
+                .onSuccess(v -> logger.info("Successfully saved shift weight settings to Redis"))
+                .onFailure(err -> logger.error("Error saving shift weight settings to Redis", err));
     }
 
     public Future<ShiftWeightSettings> getSettings() {
-
         return loadSettingsAsync()
-                .map(v ->  settings)
+                .map(v -> settings)
                 .onFailure(err -> logger.error("Error loading users", err));
 
     }
 
     public Future<Void> saveSettings(ShiftWeightSettings newSettings) {
         Promise<Void> promise = Promise.promise();
-        
-        if (!initialized) {
-            loadSettingsAsync()
-                .onSuccess(v -> {
-                    initialized = true;
-                    proceedWithSaveSettings(newSettings, promise);
-                })
-                .onFailure(err -> {
-                    logger.error("Error loading settings", err);
-                    promise.fail(err);
-                });
-        } else {
-            proceedWithSaveSettings(newSettings, promise);
-        }
-            
-        return promise.future();
-    }
-
-    private void proceedWithSaveSettings(ShiftWeightSettings newSettings, Promise<Void> promise) {
+        Map<String, ShiftWeightPreset> filtered = new HashMap<>(newSettings.getPresets());
+        filtered.remove("S");
+        newSettings = new ShiftWeightSettings(newSettings.getCurrentPresetObject(), filtered);
         this.settings = newSettings;
-        
         saveSettingsAsync()
-            .onSuccess(v -> promise.complete())
-            .onFailure(err -> promise.fail(err));
+                .onSuccess(promise::complete)
+                .onFailure(promise::fail);
+        return promise.future();
     }
 
     public Future<Void> addPreset(ShiftWeightPreset preset) {
         Promise<Void> promise = Promise.promise();
-        
+
         if (!initialized) {
             loadSettingsAsync()
-                .onSuccess(v -> {
-                    initialized = true;
-                    proceedWithAddPreset(preset, promise);
-                })
-                .onFailure(err -> {
-                    logger.error("Error loading settings", err);
-                    promise.fail(err);
-                });
+                    .onSuccess(v -> {
+                        initialized = true;
+                        proceedWithAddPreset(preset, promise);
+                    })
+                    .onFailure(err -> {
+                        logger.error("Error loading settings", err);
+                        promise.fail(err);
+                    });
         } else {
             proceedWithAddPreset(preset, promise);
         }
-            
+
         return promise.future();
     }
 
@@ -114,42 +99,42 @@ public class ShiftWeightSettingsService {
             settings.setPresets(new java.util.HashMap<>());
         }
         settings.getPresets().put(preset.getName(), preset);
-        
+
         saveSettingsAsync()
-            .onSuccess(v -> promise.complete())
-            .onFailure(err -> {
-                // Rollback on failure
-                settings.getPresets().remove(preset.getName());
-                promise.fail(err);
-            });
+                .onSuccess(v -> promise.complete())
+                .onFailure(err -> {
+                    // Rollback on failure
+                    settings.getPresets().remove(preset.getName());
+                    promise.fail(err);
+                });
     }
 
     public Future<Void> setCurrentPreset(String currentPreset) {
         Promise<Void> promise = Promise.promise();
-        
+
         if (!initialized) {
             loadSettingsAsync()
-                .onSuccess(v -> {
-                    initialized = true;
-                    proceedWithSetCurrentPreset(currentPreset, promise);
-                })
-                .onFailure(err -> {
-                    logger.error("Error loading settings", err);
-                    promise.fail(err);
-                });
+                    .onSuccess(v -> {
+                        initialized = true;
+                        proceedWithSetCurrentPreset(currentPreset, promise);
+                    })
+                    .onFailure(err -> {
+                        logger.error("Error loading settings", err);
+                        promise.fail(err);
+                    });
         } else {
             proceedWithSetCurrentPreset(currentPreset, promise);
         }
-            
+
         return promise.future();
     }
 
     private void proceedWithSetCurrentPreset(String currentPreset, Promise<Void> promise) {
         settings.setCurrentPresetObject(currentPreset);
-        
+
         saveSettingsAsync()
-            .onSuccess(v -> promise.complete())
-            .onFailure(promise::fail);
+                .onSuccess(v -> promise.complete())
+                .onFailure(promise::fail);
     }
 
     // Synchronous methods for backward compatibility

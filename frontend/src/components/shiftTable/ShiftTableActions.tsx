@@ -1,7 +1,7 @@
 import React from 'react';
 import {Box, Button, Grow, Paper, Typography} from '@mui/material';
-import authStore from '../stores/AuthStore';
-import notificationStore from '../stores/NotificationStore';
+import authStore from '../../stores/AuthStore';
+import notificationStore from '../../stores/NotificationStore';
 
 interface ShiftTableActionsProps {
     onSave: () => void;

@@ -17,13 +17,13 @@ import {
     useMediaQuery,
     useTheme
 } from '@mui/material';
-import store, {sameShift, Shift, ShiftType} from '../stores/ShiftStore';
-import AssignToShiftDialog from './dialogs/AssignToShiftDialog';
+import store, {sameShift, Shift, ShiftType} from '../../stores/ShiftStore';
+import AssignToShiftDialog from '../dialogs/AssignToShiftDialog';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import ShiftTableActions from './ShiftTableActions';
-import authStore from '../stores/AuthStore';
-import notificationStore from '../stores/NotificationStore';
+import authStore from '../../stores/AuthStore';
+import notificationStore from '../../stores/NotificationStore';
 
 const days = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 const shiftTypes = ['יום', 'לילה'] as const;
@@ -200,7 +200,7 @@ function ShiftTable<T>({
                 align="center"
                 onDrop={e => onDrop(e, shift)}
                 onDragOver={onDragOver}
-                onClick={() => shift && handleCellClick(shift)}
+                onClick={(e) => shift && handleContextMenu(e, shift)}
                 onContextMenu={e => shift && handleContextMenu(e, shift)}
                 sx={{
                     minHeight: 48,

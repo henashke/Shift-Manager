@@ -1,13 +1,13 @@
 import React, {useState} from 'react';
 import {observer} from 'mobx-react-lite';
-import usersStore from '../stores/UsersStore';
-import shiftStore, {Shift, User} from '../stores/ShiftStore';
-import DeleteUserDialog from "./dialogs/DeleteUserDialog";
-import UserInfoDialog from "./UserInfoDialog";
+import usersStore from '../../stores/UsersStore';
+import shiftStore, {Shift, User} from '../../stores/ShiftStore';
+import DeleteUserDialog from "../dialogs/DeleteUserDialog";
+import UserInfoDialog from "../dialogs/UserInfoDialog";
 import DraggableList from './DraggableList';
-import EditUser from "./dialogs/EditUser";
-import authStore from "../stores/AuthStore";
-import notificationStore from "../stores/NotificationStore";
+import EditUser from "../dialogs/EditUser";
+import authStore from "../../stores/AuthStore";
+import notificationStore from "../../stores/NotificationStore";
 
 const UserList: React.FC<{ isDragged?: boolean, setIsDragged?: (val: boolean) => void }> = observer(({ isDragged, setIsDragged }) => {
     const {users} = usersStore;

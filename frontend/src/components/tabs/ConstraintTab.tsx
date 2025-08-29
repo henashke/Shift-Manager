@@ -1,8 +1,8 @@
 import React, {useEffect, useState} from 'react';
 import {observer} from 'mobx-react-lite';
-import CalendarNavigation from '../CalendarNavigation';
-import DraggableList from '../DraggableList';
-import ShiftTable from '../ShiftTable';
+import CalendarNavigation from '../shiftTable/CalendarNavigation';
+import DraggableList from '../draggableLists/DraggableList';
+import ShiftTable from '../shiftTable/ShiftTable';
 import {Box, Container, FormControl, MenuItem, Select, Typography} from "@mui/material";
 import {sameShift, Shift, User} from '../../stores/ShiftStore';
 import authStore from "../../stores/AuthStore";

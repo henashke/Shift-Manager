@@ -92,7 +92,7 @@ function DraggableList<T>({
                                     key={getKey(item)}
                                     draggable
                                     onDragStart={e => onDragStart(e, item)}
-                                    onClick={onItemClick ? () => onItemClick(item) : undefined}
+                                    onClick={contextMenuItems ? e => handleContextMenu(e, item) : undefined}
                                     onContextMenu={contextMenuItems ? e => handleContextMenu(e, item) : undefined}
                                     sx={{
                                         background: theme => theme.palette.primary.main,

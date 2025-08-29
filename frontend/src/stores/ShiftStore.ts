@@ -108,6 +108,10 @@ export class ShiftStore {
         return this.assignedShifts.find(assignedShift => sameShift(assignedShift, shift));
     }
 
+    getAssignedOrPendingShift = (shift: Shift): AssignedShift | undefined => {
+        return this.pendingAssignedShifts.concat(this.assignedShifts).find(assignedShift => sameShift(assignedShift, shift));
+    }
+
     setWeekOffset = (offset: number) => {
         this.weekOffset = offset;
         this.fetchShifts();

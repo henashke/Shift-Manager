@@ -1,19 +1,11 @@
 package com.shiftmanagerserver.entities;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 public class AssignedShift extends Shift {
     private String assignedUsername;
     private ShiftWeightPreset preset;
 
     public AssignedShift() {
         super();
-    }
-
-    public AssignedShift(String assignedUsername, Shift shift) {
-        super(shift.getDate(), shift.getType());
-        this.assignedUsername = assignedUsername;
     }
 
     public AssignedShift(String assignedUsername, Shift shift, ShiftWeightPreset preset) {

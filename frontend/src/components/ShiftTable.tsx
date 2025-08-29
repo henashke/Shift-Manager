@@ -44,6 +44,12 @@ interface ShiftTableProps<T> {
     onDragStartHandler?: (e: React.DragEvent, draggedElement: T, fromShift?: Shift) => void;
     itemName?: string;
     requireAdmin?: boolean;
+    additionalContextMenuItems?: {
+        label: string;
+        icon: React.ReactNode;
+        action: (shift: Shift) => void;
+        disabled?: (shift: Shift) => boolean;
+    }[]
 }
 
 function ShiftTable<T>({
@@ -62,6 +68,7 @@ function ShiftTable<T>({
                            onDragEndHandler,
                            itemName,
                            requireAdmin = true,
+                           additionalContextMenuItems,
                        }: ShiftTableProps<T>) {
     const theme = useTheme();
     const isNarrowScreen = useMediaQuery(theme.breakpoints.down('md')); // Switch to vertical on screens smaller than 'md' breakpoint
@@ -303,6 +310,21 @@ function ShiftTable<T>({
                         </ListItemIcon>
                         <ListItemText>הסר {itemName}</ListItemText>
                     </MenuItem>
+                    {additionalContextMenuItems && contextMenu?.shift && additionalContextMenuItems.map((menuItem, index) => (
+                        <MenuItem
+                            key={index}
+                            onClick={() => {
+                                menuItem.action(contextMenu.shift!);
+                                handleCloseContextMenu();
+                            }}
+                            disabled={menuItem.disabled && contextMenu.shift ? menuItem.disabled(contextMenu.shift) : false}
+                        >
+                            <ListItemIcon>
+                                {menuItem.icon}
+                            </ListItemIcon>
+                            <ListItemText>{menuItem.label}</ListItemText>
+                        </MenuItem>
+                    ))}
                 </Menu>
             </TableContainer>
         </Box>

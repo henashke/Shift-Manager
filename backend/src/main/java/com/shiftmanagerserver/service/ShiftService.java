@@ -87,92 +87,86 @@ public class ShiftService {
     public Future<Void> addShifts(List<AssignedShift> newShifts) {
         Promise<Void> promise = Promise.promise();
 
+        removeOldAssignedShifts(newShifts).onSuccess(v -> {
+            addAssignedShifts(newShifts).onSuccess(v2 -> promise.complete()).onFailure(promise::fail);
+        }).onFailure(promise::fail);
+
+        return promise.future();
+    }
+
+    private Future<Void> removeOldAssignedShifts(List<AssignedShift> shiftsToRemove) {
+        Promise<Void> promise = Promise.promise();
         loadShiftsAsync()
-                .onSuccess(v -> proceedWithAddShifts(newShifts, promise))
+                .onSuccess(v -> {
+                    shifts.removeAll(shiftsToRemove);
+                    saveShiftsAsync()
+                            .onSuccess(promise::complete)
+                            .onFailure(promise::fail);
+                })
                 .onFailure(err -> {
                     logger.error("Error loading shifts", err);
                     promise.fail(err);
+                }).compose(v -> userService.getAllUsers()).onSuccess(users -> {
+                    applyShiftWeightReductionToUsers(shiftsToRemove, users);
                 });
 
         return promise.future();
     }
 
-    private void proceedWithAddShifts(List<AssignedShift> newShifts, Promise<Void> promise) {
-        shiftWeightSettingsService.getSettings().onSuccess(settings -> userService.getAllUsers().onSuccess(users -> {
-            Map<String, User> userMap = new HashMap<>();
-            for (User u : users) userMap.put(u.getName(), u);
+    private void applyShiftWeightReductionToUsers(List<AssignedShift> removedShifts, List<User> users) {
+        Map<String, User> userMap = new HashMap<>();
+        for (User u : users) userMap.put(u.getName(), u);
 
-            // Determine the date range of newShifts
-            Date minDate = null, maxDate = null;
-            for (AssignedShift s : newShifts) {
-                if (minDate == null || s.getDate().before(minDate)) minDate = s.getDate();
-                if (maxDate == null || s.getDate().after(maxDate)) maxDate = s.getDate();
+        for (AssignedShift shift : removedShifts) {
+            if (shift.getAssignedUsername() != null) {
+                User user = userMap.get(shift.getAssignedUsername());
+                if (user != null) {
+                    int newScore = user.getScore() - getShiftWeight(shift);
+                    user.setScore(Math.max(0, newScore));
+                }
             }
+        }
+    }
 
-            // Only consider old shifts within the date range of newShifts
-            List<AssignedShift> toRemove = new ArrayList<>();
-            for (AssignedShift oldShift : new ArrayList<>(shifts)) {
-                boolean inRange = false;
-                if (minDate != null && maxDate != null) {
-                    inRange = !oldShift.getDate().before(minDate) && !oldShift.getDate().after(maxDate);
-                }
-                if (!inRange) continue; // Only process shifts in the range
+    private Future<Void> addAssignedShifts(List<AssignedShift> shiftsToAdd) {
+        Promise<Void> promise = Promise.promise();
+        loadShiftsAsync()
+                .onSuccess(v -> {
+                    shifts.addAll(shiftsToAdd);
+                    saveShiftsAsync()
+                            .onSuccess(promise::complete)
+                            .onFailure(promise::fail);
+                })
+                .onFailure(err -> {
+                    logger.error("Error loading shifts", err);
+                    promise.fail(err);
+                }).compose(v -> userService.getAllUsers()).onSuccess(users -> {
+                    applyShiftWeightAdditionToUsers(shiftsToAdd, users);
+                });
 
-                AssignedShift newShift = newShifts.stream()
-                        .filter(s -> s.getDate().equals(oldShift.getDate()) && s.getType() == oldShift.getType())
-                        .findFirst().orElse(null);
-                boolean assignmentChanged = false;
-                if (newShift == null) {
-                    // Shift was removed (in this week)
-                    assignmentChanged = true;
-                } else if (!Objects.equals(oldShift.getAssignedUsername(), newShift.getAssignedUsername())) {
-                    // Assignment changed (including unassigned)
-                    assignmentChanged = true;
-                }
-                if (assignmentChanged && oldShift.getAssignedUsername() != null) {
-                    User user = userMap.get(oldShift.getAssignedUsername());
-                    if (user != null) {
-                        int weight = oldShift.getPreset().getWeights().stream()
-                                .filter(w -> w.getDay() == getDayOfWeek(oldShift.getDate()) && w.getShiftType() == oldShift.getType())
-                                .map(ShiftWeight::getWeight)
-                                .findFirst().orElse(1);
-                        int newScore = user.getScore() - weight;
-                        user.setScore(Math.max(0, newScore));
-                    }
-                }
-                if (assignmentChanged) {
-                    toRemove.add(oldShift);
+        return promise.future();
+    }
+
+    private void applyShiftWeightAdditionToUsers(List<AssignedShift> addedShifts, List<User> users) {
+        Map<String, User> userMap = new HashMap<>();
+        for (User u : users) userMap.put(u.getName(), u);
+
+        for (AssignedShift shift : addedShifts) {
+            if (shift.getAssignedUsername() != null) {
+                User user = userMap.get(shift.getAssignedUsername());
+                if (user != null) {
+                    int newScore = user.getScore() + getShiftWeight(shift);
+                    user.setScore(newScore);
                 }
             }
-            // Remove old shifts that are replaced or deleted (only in range)
-            for (AssignedShift shift : toRemove) {
-                shifts.remove(shift);
-            }
-            // Add new shifts and update scores for new assignments
-            for (AssignedShift shift : newShifts) {
-                shifts.removeIf(s -> s.getDate().equals(shift.getDate()) && s.getType() == shift.getType());
-                shift.setUuid(UUID.randomUUID());
-                shifts.add(shift);
-                if (shift.getAssignedUsername() != null) {
-                    AssignedShift prev = toRemove.stream()
-                            .filter(s -> s.getDate().equals(shift.getDate()) && s.getType() == shift.getType())
-                            .findFirst().orElse(null);
-                    if (prev == null || !Objects.equals(prev.getAssignedUsername(), shift.getAssignedUsername())) {
-                        User user = userMap.get(shift.getAssignedUsername());
-                        if (user != null) {
-                            int weight = shift.getPreset().getWeights().stream()
-                                    .filter(w -> w.getDay() == getDayOfWeek(shift.getDate()) && w.getShiftType() == shift.getType())
-                                    .map(ShiftWeight::getWeight)
-                                    .findFirst().orElse(1);
-                            user.setScore(user.getScore() + weight);
-                        }
-                    }
-                }
-            }
-            saveShiftsAsync()
-                    .onSuccess(v -> userService.saveUsersAsync().onSuccess(v2 -> promise.complete()).onFailure(promise::fail))
-                    .onFailure(promise::fail);
-        }).onFailure(promise::fail)).onFailure(promise::fail);
+        }
+    }
+
+    private int getShiftWeight(AssignedShift shift) {
+        return shift.getPreset().getWeights().stream()
+                .filter(w -> w.getDay() == getDayOfWeek(shift.getDate()) && w.getShiftType() == shift.getType())
+                .map(ShiftWeight::getWeight)
+                .findFirst().orElse(1);
     }
 
     public Future<Boolean> deleteShift(Date date, ShiftType type) {
@@ -230,9 +224,10 @@ public class ShiftService {
         }).onFailure(promise::fail)).onFailure(promise::fail);
     }
 
-    public Future<List<AssignedShift>> suggestShiftAssignment(List<Shift> shifts, Map<User, List<Constraint>> userToConstraints) {
+    public Future<List<AssignedShift>> suggestShiftAssignment
+            (List<Shift> shifts, Map<User, List<Constraint>> userToConstraints) {
         Promise<List<AssignedShift>> promise = Promise.promise();
-        
+
         if (!initialized) {
             loadShiftsAsync()
                     .onSuccess(v -> {
@@ -249,15 +244,16 @@ public class ShiftService {
         return promise.future();
     }
 
-    private void proceedWithSuggestAssignment(List<Shift> shifts, Map<User, List<Constraint>> userToConstraints, Promise<List<AssignedShift>> promise) {
+    private void proceedWithSuggestAssignment
+            (List<Shift> shifts, Map<User, List<Constraint>> userToConstraints, Promise<List<AssignedShift>> promise) {
         // Filter out admin users from assignment
         String adminUsername = System.getenv().getOrDefault("ADMIN_USERNAME", "admin");
         Map<User, List<Constraint>> nonAdminUserToConstraints = userToConstraints.entrySet().stream()
-            .filter(entry -> !"admin".equals(entry.getKey().getRole()) && !adminUsername.equals(entry.getKey().getName()))
-            .collect(java.util.stream.Collectors.toMap(
-                java.util.Map.Entry::getKey,
-                java.util.Map.Entry::getValue
-            ));
+                .filter(entry -> !"admin".equals(entry.getKey().getRole()) && !adminUsername.equals(entry.getKey().getName()))
+                .collect(java.util.stream.Collectors.toMap(
+                        java.util.Map.Entry::getKey,
+                        java.util.Map.Entry::getValue
+                ));
 
         List<User> users = new ArrayList<>(nonAdminUserToConstraints.keySet());
         if (users.isEmpty()) {
@@ -384,9 +380,11 @@ public class ShiftService {
         }).onFailure(promise::fail);
     }
 
-    private void assignShiftsBacktrackTimedFull(int idx, List<Shift> shifts, List<User> users, Map<User, List<Constraint>> userToConstraints,
+    private void assignShiftsBacktrackTimedFull(int idx, List<
+                                                        Shift> shifts, List<User> users, Map<User, List<Constraint>> userToConstraints,
                                                 Map<String, List<Shift>> userShifts, Map<String, Integer> userMissedDays, Map<String, Integer> userScores,
-                                                List<AssignedShift> currentAssignment, List<AssignedShift> bestFullAssignment, int[] bestFullScoreDiff,
+                                                List<AssignedShift> currentAssignment, List<AssignedShift> bestFullAssignment,
+                                                int[] bestFullScoreDiff,
                                                 List<AssignedShift> bestPartialAssignment, int[] bestPartialSize,
                                                 ShiftWeightPreset currentPreset, long startTime, long maxMillis) {
         if (System.currentTimeMillis() - startTime > maxMillis) return;
@@ -531,6 +529,7 @@ public class ShiftService {
 
     /**
      * Deletes all shifts for the specified week (Sunday–Saturday), updates user scores.
+     *
      * @param weekStart start date of the week (Sunday)
      * @return Future<Integer> number of deleted shifts
      */
@@ -552,11 +551,11 @@ public class ShiftService {
 
         if (!initialized) {
             loadShiftsAsync()
-                .onSuccess(v -> {
-                    initialized = true;
-                    proceedWithDeleteShiftsForWeek(weekStart, weekEnd, promise);
-                })
-                .onFailure(promise::fail);
+                    .onSuccess(v -> {
+                        initialized = true;
+                        proceedWithDeleteShiftsForWeek(weekStart, weekEnd, promise);
+                    })
+                    .onFailure(promise::fail);
         } else {
             proceedWithDeleteShiftsForWeek(weekStart, weekEnd, promise);
         }
@@ -593,9 +592,31 @@ public class ShiftService {
                 }
                 int deleted = toRemove.size();
                 saveShiftsAsync()
-                    .onSuccess(v -> userService.saveUsersAsync().onSuccess(v2 -> promise.complete(deleted)).onFailure(promise::fail))
-                    .onFailure(promise::fail);
+                        .onSuccess(v -> userService.saveUsersAsync().onSuccess(v2 -> promise.complete(deleted)).onFailure(promise::fail))
+                        .onFailure(promise::fail);
             }).onFailure(promise::fail);
         }).onFailure(promise::fail);
     }
+
+    public Future<Void> recalculateAllUserScores() {
+        Promise<Void> promise = Promise.promise();
+
+        userService.getAllUsers().onSuccess(users -> {
+            Map<String, Integer> newUserScores = new HashMap<>();
+            for (User u : users) { newUserScores.put(u.getName(), 0); }
+            for (AssignedShift s : shifts) {
+                if(!newUserScores.containsKey(s.getAssignedUsername())){
+                    continue;
+                }
+                newUserScores.put(s.getAssignedUsername(), newUserScores.get(s.getAssignedUsername()) + getShiftWeight(s));
+            }
+            for (User u : users) {
+                u.setScore(newUserScores.getOrDefault(u.getName(), 0));
+            }
+            promise.complete();
+        }).onFailure(promise::fail);
+
+        return promise.future();
+    }
 }
+

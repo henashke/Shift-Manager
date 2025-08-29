@@ -20,14 +20,18 @@ import {
 } from "@mui/material";
 import usersStore from "../stores/UsersStore";
 import {observer} from 'mobx-react-lite';
-import shiftStore, {sameShift, Shift, User} from "../stores/ShiftStore";
+import shiftStore, {AssignedShift, sameShift, Shift, User} from "../stores/ShiftStore";
 import authStore from "../stores/AuthStore";
 import notificationStore from "../stores/NotificationStore";
 import shiftWeightStore from "../stores/ShiftWeightStore";
+import ChangeAssignedShiftPreset from './dialogs/ChangeAssignedShiftPreset';
+import {SwapHoriz} from '@mui/icons-material';
 
 const AssignmentTab: React.FC = observer(() => {
     const {users} = usersStore;
     const [isDragged, setIsDragged] = useState(false);
+    const [isChangePresetDialogOpen, setIsChangePresetDialogOpen] = useState(false);
+    const [selectedShift, setSelectedShift] = useState<AssignedShift | undefined>(undefined);
     const [suggestDialogOpen, setSuggestDialogOpen] = useState(false);
     const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
     const [resetDialogOpen, setResetDialogOpen] = useState(false);
@@ -138,7 +142,7 @@ const AssignmentTab: React.FC = observer(() => {
 
     const getItemName = (user: User, shift?: Shift) => {
         if (!shift || !shiftStore.getAssignedShift(shift)) return user.name;
-        return user.name + ' (' + shiftStore.getAssignedShift(shift)?.preset?.name + ')'
+        return user.name + ' (' + shiftStore.getAssignedOrPendingShift(shift)?.preset?.name + ')'
     }
 
     return (
@@ -211,6 +215,23 @@ const AssignmentTab: React.FC = observer(() => {
                         onSave={shiftStore.savePendingAssignments}
                         onCancel={() => shiftStore.pendingAssignedShifts = []}
                         itemName="שיבוץ"
+                        additionalContextMenuItems={[{
+                            label: 'שנה פריסט עבור המשמרת',
+                            action: (shift: Shift) => {
+                                setSelectedShift(shiftStore.getAssignedShift(shift));
+                                setIsChangePresetDialogOpen(true);
+                            },
+                            icon: <SwapHoriz/>
+                        }]}
+            />
+            <ChangeAssignedShiftPreset open={isChangePresetDialogOpen}
+                                       onClose={() => setIsChangePresetDialogOpen(false)}
+                                       assignedShift={selectedShift ?? {
+                                           assignedUsername: '',
+                                           date: new Date(),
+                                           type: 'יום',
+                                           preset: {name: '', weights: []}
+                                       }}
             />
             <UserList isDragged={isDragged} setIsDragged={setIsDragged}/>
         </Container>

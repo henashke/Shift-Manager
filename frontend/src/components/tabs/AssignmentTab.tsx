@@ -1,31 +1,20 @@
 import React, {useEffect, useState} from 'react';
-import CalendarNavigation from './CalendarNavigation';
-import ShiftTable from './ShiftTable';
-import UserList from './UserList';
-import {
-    Alert,
-    Box,
-    Button,
-    Checkbox,
-    Container,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogTitle,
-    List,
-    ListItem,
-    ListItemIcon,
-    ListItemText,
-    Snackbar
-} from "@mui/material";
-import usersStore from "../stores/UsersStore";
+import CalendarNavigation from '../CalendarNavigation';
+import ShiftTable from '../ShiftTable';
+import UserList from '../UserList';
+import {Alert, Box, Container, Snackbar} from "@mui/material";
+import usersStore from "../../stores/UsersStore";
 import {observer} from 'mobx-react-lite';
-import shiftStore, {AssignedShift, sameShift, Shift, User} from "../stores/ShiftStore";
-import authStore from "../stores/AuthStore";
-import notificationStore from "../stores/NotificationStore";
-import shiftWeightStore from "../stores/ShiftWeightStore";
-import ChangeAssignedShiftPreset from './dialogs/ChangeAssignedShiftPreset';
+import shiftStore, {AssignedShift, sameShift, Shift, User} from "../../stores/ShiftStore";
+import authStore from "../../stores/AuthStore";
+import notificationStore from "../../stores/NotificationStore";
+import shiftWeightStore from "../../stores/ShiftWeightStore";
+import ChangeAssignedShiftPresetDialog from '../dialogs/ChangeAssignedShiftPresetDialog';
 import {SwapHoriz} from '@mui/icons-material';
+import DangerousButton from "../basicSharedComponents/DangerousButton";
+import BasicButton from "../basicSharedComponents/BasicButton";
+import ResetWeeklyShiftsDialog from "../dialogs/ResetWeeklyShiftsDialog";
+import SuggestAssignmentsDialog from "../dialogs/SuggestAssignmentsDialog";
 
 const AssignmentTab: React.FC = observer(() => {
     const {users} = usersStore;
@@ -35,7 +24,6 @@ const AssignmentTab: React.FC = observer(() => {
     const [suggestDialogOpen, setSuggestDialogOpen] = useState(false);
     const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
     const [resetDialogOpen, setResetDialogOpen] = useState(false);
-    const [resetLoading, setResetLoading] = useState(false);
     const [resetSuccess, setResetSuccess] = useState(false);
     const [resetError, setResetError] = useState(false);
 
@@ -73,8 +61,6 @@ const AssignmentTab: React.FC = observer(() => {
     };
 
     const assignHandler = (shift: Shift, user: User) => {
-        console.log("Assigning user", user, "to shift", shift);
-        console.log("current preset:", shiftWeightStore.currentPresetObject);
         shiftStore.assignShiftPending({
             ...shift,
             assignedUsername: user.name,
@@ -128,7 +114,6 @@ const AssignmentTab: React.FC = observer(() => {
             notificationStore.showUnauthorizedError();
             return;
         }
-        setResetLoading(true);
         setResetError(false);
         const result = await shiftStore.resetWeeklyShifts();
         if (result === 'success') {
@@ -136,7 +121,6 @@ const AssignmentTab: React.FC = observer(() => {
         } else {
             setResetError(true);
         }
-        setResetLoading(false);
         setResetDialogOpen(false);
     };
 
@@ -148,58 +132,9 @@ const AssignmentTab: React.FC = observer(() => {
     return (
         <Container maxWidth={"xl"} dir={"rtl"}>
             <Box sx={{display: 'flex', gap: 2, mb: 2}}>
-                <Button variant="contained" color="secondary" onClick={handleSuggestOpen}>
-                    הצע שיבוץ משמרות
-                </Button>
-                <Button variant="outlined" color="error" onClick={handleResetOpen}>
-                    אתחל משמרות השבוע
-                </Button>
+                <BasicButton onClick={handleSuggestOpen} title={"הצע שיבוץ משמרות"}/>
+                <DangerousButton title={"אתחל משמרות השבוע"} onClick={handleResetOpen}/>
             </Box>
-            <Dialog open={suggestDialogOpen} onClose={handleSuggestClose}>
-                <DialogTitle>בחר משתמשים רלוונטיים לשיבוץ הקרוב</DialogTitle>
-                <DialogContent>
-                    <List>
-                        {users.map(user => (
-                            <ListItem key={user.name} onClick={() => handleUserToggle(user.name)} component={
-                                'div'
-                            }>
-                                <ListItemIcon>
-                                    <Checkbox
-                                        edge="start"
-                                        checked={selectedUserIds.includes(user.name)}
-                                        tabIndex={-1}
-                                        disableRipple
-                                    />
-                                </ListItemIcon>
-                                <ListItemText primary={user.name}/>
-                            </ListItem>
-                        ))}
-                    </List>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={handleSuggestClose}>ביטול</Button>
-                    <Button onClick={handleSuggestConfirm} variant="contained" color="primary"
-                            disabled={selectedUserIds.length === 0}>
-                        הצע שיבוץ
-                    </Button>
-                </DialogActions>
-            </Dialog>
-            <Dialog open={resetDialogOpen} onClose={handleResetClose}>
-                <DialogTitle>אישור איפוס</DialogTitle>
-                <DialogContent>האם אתה בטוח שברצונך לאפס את כל המשמרות של השבוע הנוכחי?</DialogContent>
-                <DialogActions>
-                    <Button onClick={handleResetClose} disabled={resetLoading}>ביטול</Button>
-                    <Button onClick={handleResetConfirm} color="error" variant="contained" disabled={resetLoading}>
-                        {resetLoading ? 'מאפס...' : 'אשר'}
-                    </Button>
-                </DialogActions>
-            </Dialog>
-            <Snackbar open={resetSuccess} autoHideDuration={3000} onClose={() => setResetSuccess(false)}>
-                <Alert severity="success" sx={{width: '100%'}}>כל המשמרות של השבוע אופסו בהצלחה</Alert>
-            </Snackbar>
-            <Snackbar open={resetError} autoHideDuration={3000} onClose={() => setResetError(false)}>
-                <Alert severity="error" sx={{width: '100%'}}>אירעה שגיאה בעת איפוס המשמרות</Alert>
-            </Snackbar>
             <CalendarNavigation/>
             <ShiftTable onDropHandler={handleDrop}
                         onDragStartHandler={onDragStart}
@@ -214,7 +149,7 @@ const AssignmentTab: React.FC = observer(() => {
                         isPendingItems={shiftStore.pendingAssignedShifts.length > 0}
                         onSave={shiftStore.savePendingAssignments}
                         onCancel={() => shiftStore.pendingAssignedShifts = []}
-                        itemName="שיבוץ"
+                        itemName="כונן"
                         additionalContextMenuItems={[{
                             label: 'שנה פריסט עבור המשמרת',
                             action: (shift: Shift) => {
@@ -224,9 +159,23 @@ const AssignmentTab: React.FC = observer(() => {
                             icon: <SwapHoriz/>
                         }]}
             />
-            <ChangeAssignedShiftPreset open={isChangePresetDialogOpen}
-                                       onClose={() => setIsChangePresetDialogOpen(false)}
-                                       assignedShift={selectedShift ?? {
+            <SuggestAssignmentsDialog handleConfirm={handleSuggestConfirm}
+                                      open={suggestDialogOpen}
+                                      handleDialogClose={handleSuggestClose}
+                                      selectedUserIds={selectedUserIds}
+                                      handleUserToggle={handleUserToggle}
+                                      users={users}/>
+            <ResetWeeklyShiftsDialog handleConfirm={handleResetConfirm} open={resetDialogOpen}
+                                     handleDialogClose={handleResetClose}/>
+            <Snackbar open={resetSuccess} autoHideDuration={3000} onClose={() => setResetSuccess(false)}>
+                <Alert severity="success" sx={{width: '100%'}}>כל המשמרות של השבוע אופסו בהצלחה</Alert>
+            </Snackbar>
+            <Snackbar open={resetError} autoHideDuration={3000} onClose={() => setResetError(false)}>
+                <Alert severity="error" sx={{width: '100%'}}>אירעה שגיאה בעת איפוס המשמרות</Alert>
+            </Snackbar>
+            <ChangeAssignedShiftPresetDialog open={isChangePresetDialogOpen}
+                                             onClose={() => setIsChangePresetDialogOpen(false)}
+                                             assignedShift={selectedShift ?? {
                                            assignedUsername: '',
                                            date: new Date(),
                                            type: 'יום',

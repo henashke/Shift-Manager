@@ -1,14 +1,14 @@
 import React, {useEffect, useState} from 'react';
 import {observer} from 'mobx-react-lite';
-import CalendarNavigation from './CalendarNavigation';
-import DraggableList from './DraggableList';
-import ShiftTable from './ShiftTable';
+import CalendarNavigation from '../CalendarNavigation';
+import DraggableList from '../DraggableList';
+import ShiftTable from '../ShiftTable';
 import {Box, Container, FormControl, MenuItem, Select, Typography} from "@mui/material";
-import {sameShift, Shift, User} from '../stores/ShiftStore';
-import authStore from "../stores/AuthStore";
-import {Constraint, constraintStore, ConstraintType} from "../stores/ConstraintStore";
-import usersStore from "../stores/UsersStore";
-import notificationStore from "../stores/NotificationStore";
+import {sameShift, Shift, User} from '../../stores/ShiftStore';
+import authStore from "../../stores/AuthStore";
+import {Constraint, constraintStore, ConstraintType} from "../../stores/ConstraintStore";
+import usersStore from "../../stores/UsersStore";
+import notificationStore from "../../stores/NotificationStore";
 
 const constraintTypes = [ConstraintType.CANT, ConstraintType.PREFERS_NOT, ConstraintType.PREFERS];
 
@@ -146,23 +146,23 @@ const ConstraintTab: React.FC = observer(() => {
                         requireAdmin={false}
             />
             <Box sx={{display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 2}}>
-                <FormControl size="small" sx={{minWidth: 160, display: 'flex'}}>
-                    <Typography variant="h6">משבץ אילוצים עבור:</Typography>
-                    <Select
-                        labelId="user-select-label"
-                        value={selectedUser}
-                        onChange={e => setSelectedUser(e.target.value)}
-                    >
-                        {usersStore.users.map((user: User) => (
-                            <MenuItem key={user.name} value={user.name}>{user.name}</MenuItem>
-                        ))}
-                    </Select>
-                </FormControl>
-                {!authStore.isAdmin() && selectedUser !== authStore.username && (
-                    <Typography variant="body2" color="warning.main" sx={{fontStyle: 'italic'}}>
-                        (רק צפייה - לא ניתן לערוך אילוצים של כונן אחר)
-                    </Typography>
-                )}
+                {/*<FormControl size="small" sx={{minWidth: 160, display: 'flex'}}>*/}
+                {/*<Typography variant="h6">משבץ אילוצים עבור:</Typography>*/}
+                {/*    <Select*/}
+                {/*        labelId="user-select-label"*/}
+                {/*        value={selectedUser}*/}
+                {/*        onChange={e => setSelectedUser(e.target.value)}*/}
+                {/*    >*/}
+                {/*        {usersStore.users.map((user: User) => (*/}
+                {/*            <MenuItem key={user.name} value={user.name}>{user.name}</MenuItem>*/}
+                {/*        ))}*/}
+                {/*    </Select>*/}
+                {/*</FormControl>*/}
+                {/*{!authStore.isAdmin() && selectedUser !== authStore.username && (*/}
+                {/*    <Typography variant="body2" color="warning.main" sx={{fontStyle: 'italic'}}>*/}
+                {/*        (רק צפייה - לא ניתן לערוך אילוצים של כונן אחר)*/}
+                {/*    </Typography>*/}
+                {/*)}*/}
                 <DraggableList
                     items={constraintTypes}
                     getKey={item => item}
@@ -170,6 +170,27 @@ const ConstraintTab: React.FC = observer(() => {
                     onDragStart={setDragData}
                     onDrop={handleDeleteAreaOnDrop}
                     isDragged={isDragged}
+                    renderAddButton={
+                        <>
+                            <FormControl size="small" sx={{minWidth: 160, display: 'flex'}}>
+                                <Typography variant="h6">משבץ אילוצים עבור:</Typography>
+                                <Select
+                                    labelId="user-select-label"
+                                    value={selectedUser}
+                                    onChange={e => setSelectedUser(e.target.value)}
+                                >
+                                    {usersStore.users.map((user: User) => (
+                                        <MenuItem key={user.name} value={user.name}>{user.name}</MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                            {!authStore.isAdmin() && selectedUser !== authStore.username && (
+                                <Typography variant="body2" color="warning.main" sx={{fontStyle: 'italic'}}>
+                                    (רק צפייה - לא ניתן לערוך אילוצים של כונן אחר)
+                                </Typography>
+                            )}
+                        </>
+                    }
                 />
             </Box>
         </Container>

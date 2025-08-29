@@ -245,8 +245,32 @@ export class ShiftStore {
         }
     }
 
-    get hasPendingAssignments() {
-        return this.pendingAssignedShifts.length > 0;
+    recalculateScores = async (): Promise<'success' | 'error'> => {
+        this.loading = true;
+        try {
+            const response = await fetch(`${config.API_BASE_URL}/shifts/recalculateAllUsersScores`, {
+                method: 'POST',
+                headers: authStore.getAuthHeaders(),
+            });
+            if (!response.ok) {
+                if (response.status === 403) {
+                    notificationStore.showUnauthorizedError();
+                } else {
+                    throw new Error('Failed to recalculate scores');
+                }
+                return 'error';
+            }
+            runInAction(() => {
+                this.loading = false;
+            });
+            return 'success';
+        } catch (error) {
+            runInAction(() => {
+                this.loading = false;
+            });
+            console.error(error);
+            return 'error';
+        }
     }
 }
 

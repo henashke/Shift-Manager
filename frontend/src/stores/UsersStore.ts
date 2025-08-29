@@ -33,7 +33,7 @@ class UserStore {
       }
       const data = await res.json();
       runInAction(() => {
-        this.users = data;
+        this.users = data.sort((a: User, b: User) => a.name.localeCompare(b.name)) as User[];
         this.loading = false;
       });
     } catch (e) {

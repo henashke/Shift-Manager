@@ -18,7 +18,7 @@ import {
     useTheme
 } from '@mui/material';
 import store, {sameShift, Shift, ShiftType} from '../stores/ShiftStore';
-import AssignToShiftDialog from './AssignToShiftDialog';
+import AssignToShiftDialog from './dialogs/AssignToShiftDialog';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import ShiftTableActions from './ShiftTableActions';
@@ -42,7 +42,7 @@ interface ShiftTableProps<T> {
     onDropHandler?: (e: React.DragEvent, shift: Shift) => void;
     onDragEndHandler?: () => void;
     onDragStartHandler?: (e: React.DragEvent, draggedElement: T, fromShift?: Shift) => void;
-    itemName?: string;
+    itemName: string;
     requireAdmin?: boolean;
     additionalContextMenuItems?: {
         label: string;
@@ -283,6 +283,7 @@ function ShiftTable<T>({
                     onClose={() => setAssignDialogOpen(false)}
                     shift={selectedShift}
                     itemList={itemList}
+                    itemTitle={itemName}
                     getItemName={getItemName}
                     assignFunction={assignHandler}
                 />

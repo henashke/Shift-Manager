@@ -601,19 +601,23 @@ public class ShiftService {
     public Future<Void> recalculateAllUserScores() {
         Promise<Void> promise = Promise.promise();
 
-        userService.getAllUsers().onSuccess(users -> {
-            Map<String, Integer> newUserScores = new HashMap<>();
-            for (User u : users) { newUserScores.put(u.getName(), 0); }
-            for (AssignedShift s : shifts) {
-                if(!newUserScores.containsKey(s.getAssignedUsername())){
-                    continue;
+        loadShiftsAsync().onSuccess(v -> {
+            userService.getAllUsers().onSuccess(users -> {
+                Map<String, Integer> newUserScores = new HashMap<>();
+                for (User u : users) {
+                    newUserScores.put(u.getName(), 0);
                 }
-                newUserScores.put(s.getAssignedUsername(), newUserScores.get(s.getAssignedUsername()) + getShiftWeight(s));
-            }
-            for (User u : users) {
-                u.setScore(newUserScores.getOrDefault(u.getName(), 0));
-            }
-            promise.complete();
+                for (AssignedShift s : shifts) {
+                    if (!newUserScores.containsKey(s.getAssignedUsername())) {
+                        continue;
+                    }
+                    newUserScores.put(s.getAssignedUsername(), newUserScores.get(s.getAssignedUsername()) + getShiftWeight(s));
+                }
+                for (User u : users) {
+                    u.setScore(newUserScores.getOrDefault(u.getName(), 0));
+                }
+                promise.complete();
+            }).onFailure(promise::fail);
         }).onFailure(promise::fail);
 
         return promise.future();

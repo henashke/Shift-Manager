@@ -6,9 +6,9 @@ import {createTheme, ThemeProvider} from '@mui/material/styles';
 import {Route, Routes, useNavigate} from 'react-router-dom';
 import LoginSignup from './components/LoginSignup';
 import authStore from './stores/AuthStore';
-import ConstraintTab from './components/ConstraintTab';
-import AssignmentTab from './components/AssignmentTab';
-import SettingsTab from './components/SettingsTab';
+import ConstraintTab from './components/tabs/ConstraintTab';
+import AssignmentTab from './components/tabs/AssignmentTab';
+import SettingsTab from './components/tabs/SettingsTab';
 import {AppBarComponent} from "./components/AppBarComponent";
 
 const DARK_MODE_KEY = 'darkMode';
@@ -44,6 +44,7 @@ const App: React.FC = observer(() => {
                 paper: darkMode ? 'rgb(32,32,36)' : '#fff',
             },
         },
+        direction: 'rtl',
         components: {
             MuiAppBar: {
                 styleOverrides: {

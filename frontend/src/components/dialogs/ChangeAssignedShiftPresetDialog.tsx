@@ -1,19 +1,9 @@
 import React, {useState} from 'react';
-import {
-    Button,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogTitle,
-    FormControl,
-    InputLabel,
-    MenuItem,
-    Select,
-    SelectChangeEvent,
-} from '@mui/material';
+import {FormControl, InputLabel, MenuItem, Select, SelectChangeEvent,} from '@mui/material';
 import shiftStore, {AssignedShift} from '../../stores/ShiftStore';
 import shiftWeightStore, {ShiftWeightPreset} from '../../stores/ShiftWeightStore';
 import {observer} from 'mobx-react-lite';
+import CommonDialog from "./CommonDialog";
 
 interface ChangeAssignedShiftPresetProps {
     open: boolean;
@@ -21,13 +11,12 @@ interface ChangeAssignedShiftPresetProps {
     assignedShift: AssignedShift;
 }
 
-const ChangeAssignedShiftPreset: React.FC<ChangeAssignedShiftPresetProps> = observer(({
+const ChangeAssignedShiftPresetDialog: React.FC<ChangeAssignedShiftPresetProps> = observer(({
                                                                                           open,
                                                                                           onClose,
                                                                                           assignedShift,
                                                                                       }) => {
     const [selectedPreset, setSelectedPreset] = useState<ShiftWeightPreset>(assignedShift?.preset);
-
     const handlePresetChange = (event: SelectChangeEvent) => {
         const newPreset = Array.from(shiftWeightStore.presets.values()).find(p => p.name === event.target.value);
         if (newPreset) {
@@ -44,17 +33,15 @@ const ChangeAssignedShiftPreset: React.FC<ChangeAssignedShiftPresetProps> = obse
     const availablePresets = Array.from(shiftWeightStore.presets.values());
 
     return (
-        <Dialog open={open} onClose={onClose}>
-            <DialogTitle>Change Shift Preset</DialogTitle>
-            <DialogContent>
+        <CommonDialog open={open} title={"שינוי פריסט למשמרת"} content={
                 <FormControl fullWidth sx={{mt: 1}}>
-                    <InputLabel id="preset-select-label">Preset</InputLabel>
-                    <Select
-                        labelId="preset-select-label"
-                        id="preset-select"
-                        value={selectedPreset.name}
-                        label="Preset"
-                        onChange={handlePresetChange}
+                    <InputLabel id="preset-select-label">פריסט</InputLabel>
+                    <Select sx={{direction: 'ltr'}}
+                            labelId="preset-select-label"
+                            id="preset-select"
+                            value={selectedPreset.name}
+                            label="Preset"
+                            onChange={handlePresetChange}
                     >
                         {availablePresets.map((preset) => (
                             <MenuItem key={preset.name} value={preset.name}>
@@ -63,20 +50,8 @@ const ChangeAssignedShiftPreset: React.FC<ChangeAssignedShiftPresetProps> = obse
                         ))}
                     </Select>
                 </FormControl>
-            </DialogContent>
-            <DialogActions>
-                <Button onClick={onClose}>Cancel</Button>
-                <Button
-                    onClick={handleSave}
-                    disabled={isSaveDisabled}
-                    color="primary"
-                    variant="contained"
-                >
-                    Save
-                </Button>
-            </DialogActions>
-        </Dialog>
+        } handleConfirm={handleSave} handleDialogClose={onClose} disableConfirmButton={isSaveDisabled}/>
     );
 });
 
-export default ChangeAssignedShiftPreset;
+export default ChangeAssignedShiftPresetDialog;

@@ -30,9 +30,6 @@ const LoginSignup: React.FC = observer(() => {
     try {
       const endpoint = tab === 0 ? '/auth/login' : '/auth/signup';
       const url = `${config.API_BASE_URL}${endpoint}`;
-      console.log('Making request to:', url);
-      console.log('Config API_BASE_URL:', config.API_BASE_URL);
-      console.log('Endpoint:', endpoint);
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

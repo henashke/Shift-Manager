@@ -11,8 +11,6 @@ import io.vertx.core.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 public class ShiftWeightSettingsService {
@@ -147,11 +145,11 @@ public class ShiftWeightSettingsService {
     }
 
     private void proceedWithSetCurrentPreset(String currentPreset, Promise<Void> promise) {
-        settings.setCurrentPreset(currentPreset);
+        settings.setCurrentPresetObject(currentPreset);
         
         saveSettingsAsync()
             .onSuccess(v -> promise.complete())
-            .onFailure(err -> promise.fail(err));
+            .onFailure(promise::fail);
     }
 
     // Synchronous methods for backward compatibility

@@ -13,7 +13,9 @@ import {
     TableContainer,
     TableHead,
     TableRow,
-    Typography, useMediaQuery, useTheme
+    Typography,
+    useMediaQuery,
+    useTheme
 } from '@mui/material';
 import store, {sameShift, Shift, ShiftType} from '../stores/ShiftStore';
 import AssignToShiftDialog from './AssignToShiftDialog';
@@ -28,7 +30,7 @@ const shiftTypes = ['יום', 'לילה'] as const;
 
 interface ShiftTableProps<T> {
     retrieveItemFromShift: (shift: Shift) => T | undefined;
-    getItemName: (item: T) => string;
+    getItemName: (item: T, shift?: Shift) => string;
     assignHandler: (shift: Shift, item: T) => void;
     unassignHandler: (shift: Shift) => void;
     itemList: T[];
@@ -36,7 +38,7 @@ interface ShiftTableProps<T> {
     isPendingItems?: boolean;
     onSave?: () => void;
     onCancel?: () => void;
-    retreivePendingItem?: (shift: Shift) => T | undefined;
+    retrievePendingItem?: (shift: Shift) => T | undefined;
     onDropHandler?: (e: React.DragEvent, shift: Shift) => void;
     onDragEndHandler?: () => void;
     onDragStartHandler?: (e: React.DragEvent, draggedElement: T, fromShift?: Shift) => void;
@@ -54,7 +56,7 @@ function ShiftTable<T>({
                            isPendingItems,
                            onSave,
                            onCancel,
-                           retreivePendingItem,
+                           retrievePendingItem,
                            onDropHandler,
                            onDragStartHandler,
                            onDragEndHandler,
@@ -138,8 +140,8 @@ function ShiftTable<T>({
     };
 
     const getPendingOrAssignedItem = (shift: Shift) => {
-        if (retreivePendingItem) {
-            const pending = retreivePendingItem(shift);
+        if (retrievePendingItem) {
+            const pending = retrievePendingItem(shift);
             if (pending) return pending;
         }
         return retrieveItemFromShift(shift);
@@ -161,7 +163,7 @@ function ShiftTable<T>({
         </TableCell>
     );
 
-    const verticalTableHeader = <TableHead>
+    const VerticalTableHeader = () => <TableHead>
         <TableRow>
             <TableCell></TableCell>
             {shiftTypes.map((shiftType, i) => (
@@ -170,21 +172,21 @@ function ShiftTable<T>({
         </TableRow>
     </TableHead>
 
-    const horizontalTableHeader = <TableHead>
+    const HorizontalTableHeader = () => <TableHead>
         <TableRow>
             <TableCell></TableCell>
-            {weekDates.map((date) => (
-                <WeekDayHeaderTableCell date={date}/>
+            {weekDates.map((date, index: number) => (
+                <WeekDayHeaderTableCell key={index} date={date}/>
             ))}
         </TableRow>
     </TableHead>
 
-    const tableHeader = isNarrowScreen ? verticalTableHeader : horizontalTableHeader;
+    const tableHeader = isNarrowScreen ? <VerticalTableHeader/> : <HorizontalTableHeader/>;
 
     const createTableCell = (date: Date, shiftType: ShiftType) => {
         const shift = {date: date, type: shiftType};
         const item = getPendingOrAssignedItem(shift);
-        const isPending = retreivePendingItem?.(shift) !== undefined;
+        const isPending = retrievePendingItem?.(shift) !== undefined;
         return (
             <TableCell
                 key={date.toISOString() + shiftType}
@@ -214,7 +216,14 @@ function ShiftTable<T>({
                         onDragStart={e => onDragStart(e, item, shift)}
                         onDragEnd={onDragEndHandler}
                     >
-                        {getItemName(item)}
+                        <Box sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexDirection: 'column'
+                        }}>
+                            {getItemName(item, shift)}
+                        </Box>
                     </Box>
                 ) : (
                     <Typography variant="body1" sx={{color: '#7d7bf2'}}>כונן
@@ -224,7 +233,7 @@ function ShiftTable<T>({
         );
     }
 
-    const verticalTableBody = <TableBody>
+    const VerticalTableBody = () => <TableBody>
         {weekDates.map((date) => (
             <TableRow key={date.toISOString()}>
                 <WeekDayHeaderTableCell date={date}/>
@@ -233,7 +242,7 @@ function ShiftTable<T>({
         ))}
     </TableBody>
 
-    const horizontalTableBody = <TableBody>
+    const HorizontalTableBody = () => <TableBody>
         {shiftTypes.map((shiftType, i) => (
             <TableRow key={shiftType}>
                 <ShiftTypeHeaderTableCell shiftType={shiftType}/>
@@ -242,7 +251,7 @@ function ShiftTable<T>({
         ))}
     </TableBody>
 
-    const tableBody = isNarrowScreen ? verticalTableBody : horizontalTableBody
+    const tableBody = isNarrowScreen ? <VerticalTableBody/> : <HorizontalTableBody/>
 
 
     return (

@@ -3,6 +3,8 @@ import CalendarNavigation from './CalendarNavigation';
 import ShiftTable from './ShiftTable';
 import UserList from './UserList';
 import {
+    Alert,
+    Box,
     Button,
     Checkbox,
     Container,
@@ -14,15 +16,14 @@ import {
     ListItem,
     ListItemIcon,
     ListItemText,
-    Box,
-    Snackbar,
-    Alert
+    Snackbar
 } from "@mui/material";
 import usersStore from "../stores/UsersStore";
 import {observer} from 'mobx-react-lite';
 import shiftStore, {sameShift, Shift, User} from "../stores/ShiftStore";
 import authStore from "../stores/AuthStore";
 import notificationStore from "../stores/NotificationStore";
+import shiftWeightStore from "../stores/ShiftWeightStore";
 
 const AssignmentTab: React.FC = observer(() => {
     const {users} = usersStore;
@@ -35,6 +36,7 @@ const AssignmentTab: React.FC = observer(() => {
     const [resetError, setResetError] = useState(false);
 
     useEffect(() => {
+        shiftWeightStore.fetchPresets();
         usersStore.fetchUsers();
         shiftStore.fetchShifts();
     }, []);
@@ -59,15 +61,22 @@ const AssignmentTab: React.FC = observer(() => {
         try {
             const {user, fromShift}: { user: User, fromShift: Shift } = JSON.parse(data);
             if (user && !sameShift(fromShift, shift)) {
-                shiftStore.assignShiftPending({...shift, assignedUsername: user.name});
+                assignHandler(shift, user);
             }
         } catch (e) {
             console.error("Failed to parse data from drag event:", data, e);
         }
     };
 
-    console.log("Assigned Shifts:", shiftStore.assignedShifts.length);
-    console.log("pendingAssignedShifts:", shiftStore.pendingAssignedShifts.length);
+    const assignHandler = (shift: Shift, user: User) => {
+        console.log("Assigning user", user, "to shift", shift);
+        console.log("current preset:", shiftWeightStore.currentPresetObject);
+        shiftStore.assignShiftPending({
+            ...shift,
+            assignedUsername: user.name,
+            preset: shiftWeightStore.currentPresetObject
+        });
+    }
 
     const getUserFromShift = (shift: Shift): User | undefined => {
         return users.find(u => shiftStore.getAssignedShift(shift)?.assignedUsername === u.name);
@@ -127,9 +136,14 @@ const AssignmentTab: React.FC = observer(() => {
         setResetDialogOpen(false);
     };
 
+    const getItemName = (user: User, shift?: Shift) => {
+        if (!shift || !shiftStore.getAssignedShift(shift)) return user.name;
+        return user.name + ' (' + shiftStore.getAssignedShift(shift)?.preset?.name + ')'
+    }
+
     return (
         <Container maxWidth={"xl"} dir={"rtl"}>
-            <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+            <Box sx={{display: 'flex', gap: 2, mb: 2}}>
                 <Button variant="contained" color="secondary" onClick={handleSuggestOpen}>
                     הצע שיבוץ משמרות
                 </Button>
@@ -172,28 +186,25 @@ const AssignmentTab: React.FC = observer(() => {
                 <DialogActions>
                     <Button onClick={handleResetClose} disabled={resetLoading}>ביטול</Button>
                     <Button onClick={handleResetConfirm} color="error" variant="contained" disabled={resetLoading}>
-                        {resetLoading ? 'מאפס...' : 'אשר' }
+                        {resetLoading ? 'מאפס...' : 'אשר'}
                     </Button>
                 </DialogActions>
             </Dialog>
             <Snackbar open={resetSuccess} autoHideDuration={3000} onClose={() => setResetSuccess(false)}>
-                <Alert severity="success" sx={{ width: '100%' }}>כל המשמרות של השבוע אופסו בהצלחה</Alert>
+                <Alert severity="success" sx={{width: '100%'}}>כל המשמרות של השבוע אופסו בהצלחה</Alert>
             </Snackbar>
             <Snackbar open={resetError} autoHideDuration={3000} onClose={() => setResetError(false)}>
-                <Alert severity="error" sx={{ width: '100%' }}>אירעה שגיאה בעת איפוס המשמרות</Alert>
+                <Alert severity="error" sx={{width: '100%'}}>אירעה שגיאה בעת איפוס המשמרות</Alert>
             </Snackbar>
             <CalendarNavigation/>
             <ShiftTable onDropHandler={handleDrop}
                         onDragStartHandler={onDragStart}
                         onDragEndHandler={onDragEnd}
-                        assignHandler={(shift, user) => shiftStore.assignShiftPending({
-                            ...shift,
-                            assignedUsername: user.name
-                        })}
+                        assignHandler={assignHandler}
                         unassignHandler={shift => shiftStore.unassignUser(shift)}
-                        retreivePendingItem={getPendingUserFromShift}
+                        retrievePendingItem={getPendingUserFromShift}
                         retrieveItemFromShift={getUserFromShift}
-                        getItemName={u => u.name}
+                        getItemName={getItemName}
                         itemList={users}
                         assignedShifts={shiftStore.pendingAssignedShifts.concat(shiftStore.assignedShifts)}
                         isPendingItems={shiftStore.pendingAssignedShifts.length > 0}

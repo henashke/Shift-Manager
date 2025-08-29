@@ -2,6 +2,7 @@ import {makeAutoObservable, runInAction} from "mobx";
 import config from "../config";
 import authStore from "./AuthStore";
 import notificationStore from "./NotificationStore";
+import {ShiftWeightPreset} from "./ShiftWeightStore";
 
 export interface User {
     name: string;
@@ -17,6 +18,7 @@ export interface Shift {
 
 export interface AssignedShift extends Shift {
     assignedUsername: string;
+    preset: ShiftWeightPreset;
 }
 
 export class ShiftStore {
@@ -45,7 +47,6 @@ export class ShiftStore {
     fetchShifts = async () => {
         // Only fetch if authenticated
         if (!authStore.isAuthenticated()) {
-            console.log('Not authenticated, skipping shifts fetch');
             return;
         }
         
@@ -190,11 +191,8 @@ export class ShiftStore {
                 return;
             }
             const data = await response.json();
-            console.log(data)
             runInAction(() => {
-                console.log("hazara mehaserver")
                 this.pendingAssignedShifts = data.map((shift: any) => {
-                    console.log("shift: ", shift)
                     return ({
                         date: new Date(shift.date),
                         type: shift.type,

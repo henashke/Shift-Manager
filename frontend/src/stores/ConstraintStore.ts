@@ -122,7 +122,6 @@ class ConstraintStore {
 
     async fetchConstraint() {
         if (!authStore.isAuthenticated()) {
-            console.log('Not authenticated, skipping constraints fetch');
             return;
         }
         
@@ -137,7 +136,6 @@ class ConstraintStore {
             ...c,
             date: new Date(c.shift.date)
         }));
-        console.log("Fetched constraints:", this.constraints);
     }
 }
 

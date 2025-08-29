@@ -1,25 +1,29 @@
 package com.shiftmanagerserver.entities;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.Map;
 
 public class ShiftWeightSettings {
-    private String currentPreset;
+    private ShiftWeightPreset currentPresetObject;
     private Map<String, ShiftWeightPreset> presets;
 
     public ShiftWeightSettings() {
     }
 
-    public ShiftWeightSettings(String currentPreset, Map<String, ShiftWeightPreset> presets) {
-        this.currentPreset = currentPreset;
+    @JsonCreator
+    public ShiftWeightSettings(@JsonProperty("currentPresetObject") ShiftWeightPreset currentPresetObject, @JsonProperty("presets")Map<String, ShiftWeightPreset> presets) {
         this.presets = presets;
+        this.currentPresetObject = currentPresetObject;
     }
 
-    public String getCurrentPreset() {
-        return currentPreset;
+    public ShiftWeightPreset getCurrentPresetObject() {
+        return currentPresetObject;
     }
 
-    public void setCurrentPreset(String currentPreset) {
-        this.currentPreset = currentPreset;
+    public void setCurrentPresetObject(String currentPresetObject) {
+        this.currentPresetObject = this.presets.get(currentPresetObject);
     }
 
     public Map<String, ShiftWeightPreset> getPresets() {

@@ -33,10 +33,10 @@ const SettingsTab: React.FC = observer(() => {
 
     useEffect(() => {
         shiftWeightStore.fetchPresets();
-        if (!preset && shiftWeightStore.currentPreset) {
-            setPreset(shiftWeightStore.currentPreset);
+        if (!preset && shiftWeightStore.currentPresetObject) {
+            setPreset(shiftWeightStore.currentPresetObject.name);
         }
-    }, [shiftWeightStore.currentPreset]);
+    }, [preset]);
 
     useEffect(() => {
         if (preset && shiftWeightStore.presets.size > 0) {
@@ -76,6 +76,7 @@ const SettingsTab: React.FC = observer(() => {
     }, []);
 
     const handleChange = (day: string, shiftType: ShiftType, value: string) => {
+        console.log(`Changing ${day} ${shiftType} to ${value}`);
         setSettings(prev => ({
             ...prev,
             [day]: {
@@ -137,7 +138,7 @@ const SettingsTab: React.FC = observer(() => {
 
     const showSaveButton = isSettingsDifferent();
     const showMakeDefaultButton = !showSaveButton;
-    const isDefaultPreset = preset === shiftWeightStore.currentPreset;
+    const isDefaultPreset = preset === shiftWeightStore.currentPresetObject?.name;
     const presetOptions = Array.from(shiftWeightStore.presets.keys());
 
     return (

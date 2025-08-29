@@ -20,7 +20,6 @@ class UserStore {
   fetchUsers = async () => {
     // Only fetch if authenticated
     if (!authStore.isAuthenticated()) {
-      console.log('Not authenticated, skipping users fetch');
       return;
     }
     

@@ -57,7 +57,7 @@ const ShiftTableActions: React.FC<ShiftTableActionsProps> = ({onSave, onCancel, 
 
     return (
         <Grow in timeout={700} style={{ transformOrigin: 'left center' }}>
-            <Paper sx={{p: 2, flexDirection: 'column', alignItems: 'flex-start', flex: 1, borderRadius: 3}}>
+            <Paper sx={{p: 2, flex: 1, borderRadius: 3}}>
                 <Box sx={{display: "flex", alignItems: 'center', mb: 1}}>
                     <Button
                         variant="contained"

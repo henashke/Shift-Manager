@@ -117,6 +117,8 @@ const ConstraintTab: React.FC = observer(() => {
         }, shift))?.constraintType;
     }
 
+    const isRemoveItemDisabled = (shift: Shift) => !constraintStore.constraints.concat(constraintStore.pendingConstraints).find(c => c.userId === selectedUser && sameShift(c.shift, shift))
+
     return (
         <Container maxWidth={"xl"} dir="rtl">
             <CalendarNavigation/>
@@ -144,25 +146,9 @@ const ConstraintTab: React.FC = observer(() => {
                         }}
                         itemName="אילוץ"
                         requireAdmin={false}
+                        isRemoveItemDisabled={isRemoveItemDisabled}
             />
             <Box sx={{display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 2}}>
-                {/*<FormControl size="small" sx={{minWidth: 160, display: 'flex'}}>*/}
-                {/*<Typography variant="h6">משבץ אילוצים עבור:</Typography>*/}
-                {/*    <Select*/}
-                {/*        labelId="user-select-label"*/}
-                {/*        value={selectedUser}*/}
-                {/*        onChange={e => setSelectedUser(e.target.value)}*/}
-                {/*    >*/}
-                {/*        {usersStore.users.map((user: User) => (*/}
-                {/*            <MenuItem key={user.name} value={user.name}>{user.name}</MenuItem>*/}
-                {/*        ))}*/}
-                {/*    </Select>*/}
-                {/*</FormControl>*/}
-                {/*{!authStore.isAdmin() && selectedUser !== authStore.username && (*/}
-                {/*    <Typography variant="body2" color="warning.main" sx={{fontStyle: 'italic'}}>*/}
-                {/*        (רק צפייה - לא ניתן לערוך אילוצים של כונן אחר)*/}
-                {/*    </Typography>*/}
-                {/*)}*/}
                 <DraggableList
                     items={constraintTypes}
                     getKey={item => item}

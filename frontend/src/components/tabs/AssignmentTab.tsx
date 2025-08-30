@@ -131,11 +131,11 @@ const AssignmentTab: React.FC = observer(() => {
 
     return (
         <Container maxWidth={"xl"} dir={"rtl"}>
+            <CalendarNavigation/>
             <Box sx={{display: 'flex', gap: 2, mb: 2}}>
-                <BasicButton onClick={handleSuggestOpen} title={"הצע שיבוץ משמרות"}/>
+                <BasicButton onClick={handleSuggestOpen} title={"הצע שיבוץ לשבוע"}/>
                 <DangerousButton title={"אתחל משמרות השבוע"} onClick={handleResetOpen}/>
             </Box>
-            <CalendarNavigation/>
             <ShiftTable onDropHandler={handleDrop}
                         onDragStartHandler={onDragStart}
                         onDragEndHandler={onDragEnd}
@@ -151,13 +151,15 @@ const AssignmentTab: React.FC = observer(() => {
                         onCancel={() => shiftStore.pendingAssignedShifts = []}
                         itemName="כונן"
                         additionalContextMenuItems={[{
-                            label: 'שנה פריסט עבור המשמרת',
+                            label: 'שנה פריסט',
                             action: (shift: Shift) => {
                                 setSelectedShift(shiftStore.getAssignedShift(shift));
                                 setIsChangePresetDialogOpen(true);
                             },
-                            icon: <SwapHoriz/>
+                            icon: <SwapHoriz color={'primary'}/>,
+                            disabled: (shift: Shift) => !shiftStore.getAssignedShift(shift)
                         }]}
+                        isRemoveItemDisabled={(shift: Shift) => !shiftStore.getAssignedOrPendingShift(shift)}
             />
             <SuggestAssignmentsDialog handleConfirm={handleSuggestConfirm}
                                       open={suggestDialogOpen}

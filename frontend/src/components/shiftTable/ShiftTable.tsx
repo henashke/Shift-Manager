@@ -17,13 +17,13 @@ import {
     useMediaQuery,
     useTheme
 } from '@mui/material';
-import store, {sameShift, Shift, ShiftType} from '../../stores/ShiftStore';
+import store, {Shift, ShiftType} from '../../stores/ShiftStore';
 import AssignToShiftDialog from '../dialogs/AssignToShiftDialog';
 import AddIcon from '@mui/icons-material/Add';
-import RemoveIcon from '@mui/icons-material/Remove';
 import ShiftTableActions from './ShiftTableActions';
 import authStore from '../../stores/AuthStore';
 import notificationStore from '../../stores/NotificationStore';
+import DeleteIcon from "@mui/icons-material/Delete";
 
 const days = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 const shiftTypes = ['יום', 'לילה'] as const;
@@ -44,6 +44,7 @@ interface ShiftTableProps<T> {
     onDragStartHandler?: (e: React.DragEvent, draggedElement: T, fromShift?: Shift) => void;
     itemName: string;
     requireAdmin?: boolean;
+    isRemoveItemDisabled?: (shift: Shift) => boolean;
     additionalContextMenuItems?: {
         label: string;
         icon: React.ReactNode;
@@ -67,6 +68,7 @@ function ShiftTable<T>({
                            onDragStartHandler,
                            onDragEndHandler,
                            itemName,
+                           isRemoveItemDisabled,
                            requireAdmin = true,
                            additionalContextMenuItems,
                        }: ShiftTableProps<T>) {
@@ -200,7 +202,7 @@ function ShiftTable<T>({
                 align="center"
                 onDrop={e => onDrop(e, shift)}
                 onDragOver={onDragOver}
-                onClick={(e) => shift && handleContextMenu(e, shift)}
+                onClick={(e) => shift && isAllContextMenuDisabledButAddItem(shift) ? handleCellClick(shift) : handleContextMenu(e, shift)}
                 onContextMenu={e => shift && handleContextMenu(e, shift)}
                 sx={{
                     minHeight: 48,
@@ -260,10 +262,23 @@ function ShiftTable<T>({
 
     const tableBody = isNarrowScreen ? <VerticalTableBody/> : <HorizontalTableBody/>
 
+    const isAllContextMenuDisabledButAddItem = (shift: Shift) => {
+        if (isRemoveItemDisabled === undefined || !(isRemoveItemDisabled(shift))) {
+            return false
+        }
+        if (additionalContextMenuItems) {
+            for (const menuItem of additionalContextMenuItems) {
+                if (menuItem.disabled !== undefined && !menuItem.disabled(shift)) {
+                    return false
+                }
+            }
+        }
+        return true
+    }
 
     return (
 
-        <Box sx={{display: 'flex', gap: 2, height: '100%', mb: 4}}>
+        <Box sx={{display: 'flex', gap: 2, height: '100%', mb: 4, flexDirection: isNarrowScreen ? 'column' : 'row'}}>
             {
                 isPendingItems && onSave && onCancel &&
                 <ShiftTableActions
@@ -300,14 +315,15 @@ function ShiftTable<T>({
                 >
                     <MenuItem onClick={handleAssignUser}>
                         <ListItemIcon>
-                            <AddIcon fontSize="small"/>
+                            <AddIcon color={'success'} fontSize="small"/>
                         </ListItemIcon>
-                        <ListItemText>הוסף {itemName}</ListItemText>
+                        <ListItemText>שבץ {itemName}</ListItemText>
                     </MenuItem>
                     <MenuItem onClick={handleRemoveItem}
-                              disabled={!contextMenu?.shift || !assignedShifts.find(s => sameShift(s, contextMenu.shift!))}>
+                              disabled={isRemoveItemDisabled && isRemoveItemDisabled(contextMenu?.shift!)}
+                    >
                         <ListItemIcon>
-                            <RemoveIcon fontSize="small"/>
+                            <DeleteIcon color={'error'} fontSize="small"/>
                         </ListItemIcon>
                         <ListItemText>הסר {itemName}</ListItemText>
                     </MenuItem>

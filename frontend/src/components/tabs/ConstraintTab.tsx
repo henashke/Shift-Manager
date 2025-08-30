@@ -156,7 +156,7 @@ const ConstraintTab: React.FC = observer(() => {
                     onDragStart={setDragData}
                     onDrop={handleDeleteAreaOnDrop}
                     isDragged={isDragged}
-                    renderAddButton={
+                    renderAdditionalComponent={
                         <>
                             <FormControl size="small" sx={{minWidth: 160, display: 'flex'}}>
                                 <Typography variant="h6">משבץ אילוצים עבור:</Typography>

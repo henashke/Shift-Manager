@@ -24,6 +24,7 @@ import ShiftTableActions from './ShiftTableActions';
 import authStore from '../../stores/AuthStore';
 import notificationStore from '../../stores/NotificationStore';
 import DeleteIcon from "@mui/icons-material/Delete";
+import {formatDate} from "./CalendarNavigation";
 
 const days = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 const shiftTypes = ['יום', 'לילה'] as const;
@@ -92,6 +93,7 @@ function ShiftTable<T>({
             return;
         }
         onDropHandler?.(e, shift);
+        onDragEndHandler && onDragEndHandler();
     };
 
     const onDragOver = (e: React.DragEvent) => {
@@ -160,12 +162,12 @@ function ShiftTable<T>({
     };
 
     const WeekDayHeaderTableCell = ({date}: { date: Date }) => (
-        <TableCell sx={{backgroundColor: isToday(date) ? '#3a3a43' : undefined}} key={date.toISOString()}
+        <TableCell sx={{backgroundColor: isToday(date) ? '#3a3a43' : undefined}} key={'header-' + formatDate(date)}
                    align="center">
             <Typography variant={"h6"}>{days[date.getDay()]}</Typography>
             <Typography>{date.toLocaleDateString('he-IL', {
-                day: '2-digit',
-                month: '2-digit'
+                day: 'numeric',
+                month: 'numeric'
             })}</Typography>
         </TableCell>
     );
@@ -208,7 +210,7 @@ function ShiftTable<T>({
         const isPending = retrievePendingItem?.(shift) !== undefined;
         return (
             <TableCell
-                key={date.toISOString() + shiftType}
+                key={'table-cell-' + formatDate(date) + shiftType}
                 align="center"
                 onDrop={e => onDrop(e, shift)}
                 onDragOver={onDragOver}
@@ -223,6 +225,7 @@ function ShiftTable<T>({
             >
                 {item ? (
                     <Box
+                        key={"assigned-" + formatDate(date) + shiftType}
                         sx={{
                             background: theme => isPending ? theme.palette.secondary.main : theme.palette.primary.main,
                             color: 'common.white',
@@ -254,7 +257,7 @@ function ShiftTable<T>({
 
     const VerticalTableBody = () => <TableBody>
         {weekDates.map((date) => (
-            <TableRow key={date.toISOString()}>
+            <TableRow key={'table-row-' + formatDate(date)}>
                 <WeekDayHeaderTableCell date={date}/>
                 {shiftTypes.map(shiftType => createTableCell(date, shiftType))}
             </TableRow>

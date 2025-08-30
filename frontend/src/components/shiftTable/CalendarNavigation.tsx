@@ -10,8 +10,6 @@ const CalendarNavigation: React.FC = observer(() => {
     const handleNextWeekClick = () => store.setWeekOffset(store.weekOffset + 1);
     const handleTodayClick = () => store.setWeekOffset(0);
 
-    const formatDate = (date: Date) =>
-        date.toLocaleDateString('he-IL', {month: 'short', day: 'numeric', year: 'numeric'});
 
     return (
         <Box display="flex" alignItems="center" justifyContent="center" gap={2} mb={3}>
@@ -31,5 +29,8 @@ const CalendarNavigation: React.FC = observer(() => {
         </Box>
     );
 });
+
+export const formatDate = (date: Date) =>
+    date.toLocaleDateString('he-IL', {month: 'numeric', day: 'numeric', year: 'numeric'});
 
 export default CalendarNavigation;

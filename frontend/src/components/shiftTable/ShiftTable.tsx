@@ -248,8 +248,7 @@ function ShiftTable<T>({
                         </Box>
                     </Box>
                 ) : (
-                    <Typography variant="body1" sx={{color: '#7d7bf2'}}>כונן
-                        משובץ</Typography>
+                    <Typography variant="body1" sx={{color: '#7d7bf2'}}>{itemName + " משובץ"}</Typography>
                 )}
             </TableCell>
         );

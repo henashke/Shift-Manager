@@ -21,7 +21,7 @@ const ConstraintTab: React.FC = observer(() => {
     }, []);
 
     const onAssignedConstraintDragStart = (e: React.DragEvent, type: ConstraintType, fromShift?: Shift) => {
-        setIsDragged(true);
+        requestAnimationFrame(() => setIsDragged(true));
         setDragData(e, type, fromShift);
     };
 
@@ -81,6 +81,7 @@ const ConstraintTab: React.FC = observer(() => {
         } catch (e) {
             console.error('Failed to parse data from drag event:', data, e);
         }
+        setIsDragged(false);
     };
 
     const assignConstraint = (shift: Shift, constraintType: ConstraintType) => {

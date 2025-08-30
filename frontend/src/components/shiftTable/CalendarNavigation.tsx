@@ -1,6 +1,6 @@
 import React from 'react';
 import {observer} from 'mobx-react-lite';
-import {Box, Fab, Typography} from '@mui/material';
+import {Box, Fab, Tooltip, Typography} from '@mui/material';
 import store from '../../stores/ShiftStore';
 import {ChevronLeft, ChevronRight, Today} from '@mui/icons-material';
 
@@ -24,8 +24,10 @@ const CalendarNavigation: React.FC = observer(() => {
             </Typography>
             <Fab variant={"extended"} color={"primary"} sx={{flexShrink: 0}}
                  onClick={handleNextWeekClick}><ChevronLeft/></Fab>
-            {/*<BasicButton onClick={handleTodayClick} title={"לשבוע הנוכחי"}/>*/}
-            <Fab color={"secondary"} variant={"extended"} sx={{flexShrink: 0}} onClick={handleTodayClick}><Today/></Fab>
+            <Tooltip title={"חזרה להיום"} placement="bottom" arrow>
+                <Fab disabled={store.weekOffset === 0} color={"secondary"} variant={"extended"} sx={{flexShrink: 0}}
+                     onClick={handleTodayClick}><Today/></Fab>
+            </Tooltip>
         </Box>
     );
 });

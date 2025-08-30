@@ -30,8 +30,8 @@ const UserList: React.FC<{ isDragged?: boolean, setIsDragged?: (val: boolean) =>
         }
         if (setIsDragged) setIsDragged(false);
     };
-    const onDragStart = (e: React.DragEvent, user: User, fromShift?: Shift) => {
-        e.dataTransfer.setData('application/json', JSON.stringify({user: user, fromShift: fromShift || null}));
+    const onDragStart = (e: React.DragEvent, user: User) => {
+        e.dataTransfer.setData('application/json', JSON.stringify({user: user}));
     };
     const handleEditDialogOpen = (user: User) => {
         if (!authStore.isAdmin()) {

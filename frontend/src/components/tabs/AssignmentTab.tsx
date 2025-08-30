@@ -38,7 +38,7 @@ const AssignmentTab: React.FC = observer(() => {
     }, [users]);
 
     const onDragStart = (e: React.DragEvent, user: User, fromShift?: Shift) => {
-        setIsDragged(true);
+        requestAnimationFrame(() => setIsDragged(true));
         e.dataTransfer.setData('application/json', JSON.stringify({user: user, fromShift: fromShift || null}));
     };
 

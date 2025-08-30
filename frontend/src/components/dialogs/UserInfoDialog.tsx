@@ -2,7 +2,7 @@ import React from 'react';
 import {Avatar, Box, Dialog, DialogContent, DialogTitle, IconButton, Typography, useTheme} from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 
-import {User} from "../stores/ShiftStore";
+import {User} from "../../stores/ShiftStore";
 
 interface UserInfoDialogProps {
   open: boolean;

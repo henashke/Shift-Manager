@@ -7,17 +7,18 @@ interface DeleteUserProps extends Omit<CommonDialogProps, 'title' | 'content' | 
     handleConfirm: (userToDeleteId: string) => void;
 }
 
-const DeleteUser: React.FC<DeleteUserProps> = ({
-    open,
-    handleDialogClose,
-    handleConfirm,
-    selectedUser
-}) => (
+const DeleteUserDialog: React.FC<DeleteUserProps> = ({
+                                                         open,
+                                                         handleDialogClose,
+                                                         handleConfirm,
+                                                         selectedUser
+                                                     }) => (
     <CommonDialog open={open}
                   title={"מחיקת " + (selectedUser ? selectedUser.name : '')}
                   content={<>האם אתה בטוח שברצונך למחוק את {selectedUser?.name}?</>}
                   handleConfirm={handleConfirm}
-                  handleDialogClose={handleDialogClose}/>
+                  handleDialogClose={handleDialogClose}
+                  warningDialog/>
 );
 
-export default DeleteUser;
+export default DeleteUserDialog;

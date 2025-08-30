@@ -1,7 +1,7 @@
 import React from 'react';
 import {Box, Button, Grow, Paper, Typography} from '@mui/material';
-import authStore from '../stores/AuthStore';
-import notificationStore from '../stores/NotificationStore';
+import authStore from '../../stores/AuthStore';
+import notificationStore from '../../stores/NotificationStore';
 
 interface ShiftTableActionsProps {
     onSave: () => void;
@@ -57,7 +57,7 @@ const ShiftTableActions: React.FC<ShiftTableActionsProps> = ({onSave, onCancel, 
 
     return (
         <Grow in timeout={700} style={{ transformOrigin: 'left center' }}>
-            <Paper sx={{p: 2, flexDirection: 'column', alignItems: 'flex-start', flex: 1, borderRadius: 3}}>
+            <Paper sx={{p: 2, flex: 1, borderRadius: 3}}>
                 <Box sx={{display: "flex", alignItems: 'center', mb: 1}}>
                     <Button
                         variant="contained"

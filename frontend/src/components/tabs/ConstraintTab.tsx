@@ -1,14 +1,14 @@
 import React, {useEffect, useState} from 'react';
 import {observer} from 'mobx-react-lite';
-import CalendarNavigation from './CalendarNavigation';
-import DraggableList from './DraggableList';
-import ShiftTable from './ShiftTable';
+import CalendarNavigation from '../shiftTable/CalendarNavigation';
+import DraggableList from '../draggableLists/DraggableList';
+import ShiftTable from '../shiftTable/ShiftTable';
 import {Box, Container, FormControl, MenuItem, Select, Typography} from "@mui/material";
-import {sameShift, Shift, User} from '../stores/ShiftStore';
-import authStore from "../stores/AuthStore";
-import {Constraint, constraintStore, ConstraintType} from "../stores/ConstraintStore";
-import usersStore from "../stores/UsersStore";
-import notificationStore from "../stores/NotificationStore";
+import {sameShift, Shift, User} from '../../stores/ShiftStore';
+import authStore from "../../stores/AuthStore";
+import {Constraint, constraintStore, ConstraintType} from "../../stores/ConstraintStore";
+import usersStore from "../../stores/UsersStore";
+import notificationStore from "../../stores/NotificationStore";
 
 const constraintTypes = [ConstraintType.CANT, ConstraintType.PREFERS_NOT, ConstraintType.PREFERS];
 
@@ -19,8 +19,6 @@ const ConstraintTab: React.FC = observer(() => {
         usersStore.fetchUsers();
         constraintStore.fetchConstraint();
     }, []);
-
-    console.log("ConstraintTab constraints:", constraintStore.constraints);
 
     const onAssignedConstraintDragStart = (e: React.DragEvent, type: ConstraintType, fromShift?: Shift) => {
         setIsDragged(true);
@@ -119,6 +117,8 @@ const ConstraintTab: React.FC = observer(() => {
         }, shift))?.constraintType;
     }
 
+    const isRemoveItemDisabled = (shift: Shift) => !constraintStore.constraints.concat(constraintStore.pendingConstraints).find(c => c.userId === selectedUser && sameShift(c.shift, shift))
+
     return (
         <Container maxWidth={"xl"} dir="rtl">
             <CalendarNavigation/>
@@ -135,7 +135,7 @@ const ConstraintTab: React.FC = observer(() => {
                             constraintStore.removeConstraint(shift, selectedUser);
                         }}
                         getItemName={(item: ConstraintType) => item.toString()}
-                        retreivePendingItem={getPendingConstraintTypeFromShift}
+                        retrievePendingItem={getPendingConstraintTypeFromShift}
                         onDragStartHandler={onAssignedConstraintDragStart}
                         onDragEndHandler={onDragEnd}
                         onDropHandler={handleShiftTableDrop}
@@ -146,25 +146,9 @@ const ConstraintTab: React.FC = observer(() => {
                         }}
                         itemName="אילוץ"
                         requireAdmin={false}
+                        isRemoveItemDisabled={isRemoveItemDisabled}
             />
             <Box sx={{display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 2}}>
-                <FormControl size="small" sx={{minWidth: 160, display: 'flex'}}>
-                    <Typography variant="h6">משבץ אילוצים עבור:</Typography>
-                    <Select
-                        labelId="user-select-label"
-                        value={selectedUser}
-                        onChange={e => setSelectedUser(e.target.value)}
-                    >
-                        {usersStore.users.map((user: User) => (
-                            <MenuItem key={user.name} value={user.name}>{user.name}</MenuItem>
-                        ))}
-                    </Select>
-                </FormControl>
-                {!authStore.isAdmin() && selectedUser !== authStore.username && (
-                    <Typography variant="body2" color="warning.main" sx={{fontStyle: 'italic'}}>
-                        (רק צפייה - לא ניתן לערוך אילוצים של כונן אחר)
-                    </Typography>
-                )}
                 <DraggableList
                     items={constraintTypes}
                     getKey={item => item}
@@ -172,6 +156,27 @@ const ConstraintTab: React.FC = observer(() => {
                     onDragStart={setDragData}
                     onDrop={handleDeleteAreaOnDrop}
                     isDragged={isDragged}
+                    renderAddButton={
+                        <>
+                            <FormControl size="small" sx={{minWidth: 160, display: 'flex'}}>
+                                <Typography variant="h6">משבץ אילוצים עבור:</Typography>
+                                <Select
+                                    labelId="user-select-label"
+                                    value={selectedUser}
+                                    onChange={e => setSelectedUser(e.target.value)}
+                                >
+                                    {usersStore.users.map((user: User) => (
+                                        <MenuItem key={user.name} value={user.name}>{user.name}</MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                            {!authStore.isAdmin() && selectedUser !== authStore.username && (
+                                <Typography variant="body2" color="warning.main" sx={{fontStyle: 'italic'}}>
+                                    (רק צפייה - לא ניתן לערוך אילוצים של כונן אחר)
+                                </Typography>
+                            )}
+                        </>
+                    }
                 />
             </Box>
         </Container>

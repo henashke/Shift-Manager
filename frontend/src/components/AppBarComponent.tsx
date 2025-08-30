@@ -27,7 +27,7 @@ export const AppBarComponent = ({darkMode, setDarkMode} : {darkMode: boolean, se
         if (newValue === 2) navigate('/settings');
     };
 
-    return <AppBar position="static" color="primary" sx={{mb: 4}}>
+    return <AppBar position="sticky" color="primary" sx={{mb: 4}}>
         <Toolbar sx={{justifyContent: 'space-between'}}>
             <Box sx={{display: 'flex', alignItems: 'center', flex: 1}}>
                 <IconButton

@@ -2,6 +2,7 @@ import {makeAutoObservable, runInAction} from "mobx";
 import config from "../config";
 import authStore from "./AuthStore";
 import notificationStore from "./NotificationStore";
+import {ShiftWeightPreset} from "./ShiftWeightStore";
 
 export interface User {
     name: string;
@@ -17,6 +18,7 @@ export interface Shift {
 
 export interface AssignedShift extends Shift {
     assignedUsername: string;
+    preset: ShiftWeightPreset;
 }
 
 export class ShiftStore {
@@ -45,7 +47,6 @@ export class ShiftStore {
     fetchShifts = async () => {
         // Only fetch if authenticated
         if (!authStore.isAuthenticated()) {
-            console.log('Not authenticated, skipping shifts fetch');
             return;
         }
         
@@ -105,6 +106,10 @@ export class ShiftStore {
 
     getAssignedShift = (shift: Shift): AssignedShift | undefined => {
         return this.assignedShifts.find(assignedShift => sameShift(assignedShift, shift));
+    }
+
+    getAssignedOrPendingShift = (shift: Shift): AssignedShift | undefined => {
+        return this.pendingAssignedShifts.concat(this.assignedShifts).find(assignedShift => sameShift(assignedShift, shift));
     }
 
     setWeekOffset = (offset: number) => {
@@ -190,11 +195,8 @@ export class ShiftStore {
                 return;
             }
             const data = await response.json();
-            console.log(data)
             runInAction(() => {
-                console.log("hazara mehaserver")
                 this.pendingAssignedShifts = data.map((shift: any) => {
-                    console.log("shift: ", shift)
                     return ({
                         date: new Date(shift.date),
                         type: shift.type,
@@ -243,8 +245,32 @@ export class ShiftStore {
         }
     }
 
-    get hasPendingAssignments() {
-        return this.pendingAssignedShifts.length > 0;
+    recalculateScores = async (): Promise<'success' | 'error'> => {
+        this.loading = true;
+        try {
+            const response = await fetch(`${config.API_BASE_URL}/shifts/recalculateAllUsersScores`, {
+                method: 'POST',
+                headers: authStore.getAuthHeaders(),
+            });
+            if (!response.ok) {
+                if (response.status === 403) {
+                    notificationStore.showUnauthorizedError();
+                } else {
+                    throw new Error('Failed to recalculate scores');
+                }
+                return 'error';
+            }
+            runInAction(() => {
+                this.loading = false;
+            });
+            return 'success';
+        } catch (error) {
+            runInAction(() => {
+                this.loading = false;
+            });
+            console.error(error);
+            return 'error';
+        }
     }
 }
 

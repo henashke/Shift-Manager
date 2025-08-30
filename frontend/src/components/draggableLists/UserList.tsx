@@ -1,19 +1,16 @@
 import React, {useState} from 'react';
 import {observer} from 'mobx-react-lite';
-import usersStore from '../stores/UsersStore';
-import shiftStore, {Shift, User} from '../stores/ShiftStore';
-import AddUserDialog from './AddUserDialog';
-import DeleteUser from "./dialogs/DeleteUser";
-import UserInfoDialog from "./UserInfoDialog";
+import usersStore from '../../stores/UsersStore';
+import shiftStore, {Shift, User} from '../../stores/ShiftStore';
+import DeleteUserDialog from "../dialogs/DeleteUserDialog";
+import UserInfoDialog from "../dialogs/UserInfoDialog";
 import DraggableList from './DraggableList';
-import {Button} from "@mui/material";
-import EditUser from "./dialogs/EditUser";
-import authStore from "../stores/AuthStore";
-import notificationStore from "../stores/NotificationStore";
+import EditUser from "../dialogs/EditUser";
+import authStore from "../../stores/AuthStore";
+import notificationStore from "../../stores/NotificationStore";
 
 const UserList: React.FC<{ isDragged?: boolean, setIsDragged?: (val: boolean) => void }> = observer(({ isDragged, setIsDragged }) => {
     const {users} = usersStore;
-    const [addDialogOpen, setAddDialogOpen] = useState(false);
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState<User | undefined>(undefined);
@@ -92,32 +89,16 @@ const UserList: React.FC<{ isDragged?: boolean, setIsDragged?: (val: boolean) =>
                     {label: 'מחק', onClick: () => handleDeleteDialogOpen(user)},
                 ]}
                 isDragged={isDragged}
-                renderAddButton={() => (
-                    <Button 
-                        variant="contained" 
-                        color="primary" 
-                        onClick={() => {
-                            if (!authStore.isAdmin()) {
-                                notificationStore.showUnauthorizedError();
-                                return;
-                            }
-                            setAddDialogOpen(true);
-                        }}
-                    >
-                        הוסף משתמש
-                    </Button>
-                )}
             />
             <EditUser open={editDialogOpen}
                        handleDialogClose={handleEditDialogClose}
                        handleConfirm={handleConfirmEdit}
                        user={selectedUser}/>
-            <DeleteUser
+            <DeleteUserDialog
                 open={deleteDialogOpen}
                 handleDialogClose={handleDeleteDialogClose}
                 handleConfirm={handleConfirmDelete}
                 selectedUser={selectedUser}/>
-            <AddUserDialog open={addDialogOpen} onClose={() => setAddDialogOpen(false)}/>
             <UserInfoDialog open={infoDialogOpen} user={selectedUser} onClose={() => setInfoDialogOpen(false)}/>
         </>
     );

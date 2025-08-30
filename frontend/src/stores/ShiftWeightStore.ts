@@ -16,7 +16,7 @@ export interface ShiftWeightPreset {
 }
 
 class ShiftWeightStore {
-    currentPreset: string = '';
+    currentPresetObject: ShiftWeightPreset = {name: '', weights: []};
     presets: Map<string, ShiftWeightPreset> = new Map();
     loading: boolean = false;
     pendingPreset: ShiftWeightPreset | null = null;
@@ -26,18 +26,12 @@ class ShiftWeightStore {
         // Don't fetch automatically - will be called when needed
     }
 
-    get currentWeights(): ShiftWeight[] {
-        const preset = this.presets.get(this.currentPreset);
-        return preset ? preset.weights : [];
-    }
-
     async fetchPresets() {
         // Only fetch if authenticated
         if (!authStore.isAuthenticated()) {
-            console.log('Not authenticated, skipping presets fetch');
             return;
         }
-        
+
         this.loading = true;
         try {
             const res = await fetch(`${config.API_BASE_URL}/shift-weight-settings`, {
@@ -47,7 +41,7 @@ class ShiftWeightStore {
             const data = await res.json();
             runInAction(() => {
                 this.presets = new Map(Object.entries(data.presets));
-                this.currentPreset = data.currentPreset;
+                this.currentPresetObject = data.currentPresetObject;
                 this.loading = false;
             });
         } catch (e) {
@@ -82,13 +76,16 @@ class ShiftWeightStore {
 
     async setCurrentPresetOnServer(presetName: string) {
         try {
+            if (!this.presets.has(presetName)) {
+                return
+            }
             const res = await fetch(`${config.API_BASE_URL}/shift-weight-settings/current-preset`, {
                 method: 'POST',
                 headers: authStore.getAuthHeaders(),
                 body: JSON.stringify({currentPreset: presetName})
             });
             if (res.ok) {
-                this.currentPreset = presetName;
+                this.currentPresetObject = this.presets.get(presetName)!;
             } else if (res.status === 403) {
                 notificationStore.showUnauthorizedError();
             }

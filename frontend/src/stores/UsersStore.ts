@@ -20,7 +20,6 @@ class UserStore {
   fetchUsers = async () => {
     // Only fetch if authenticated
     if (!authStore.isAuthenticated()) {
-      console.log('Not authenticated, skipping users fetch');
       return;
     }
     
@@ -34,7 +33,7 @@ class UserStore {
       }
       const data = await res.json();
       runInAction(() => {
-        this.users = data;
+        this.users = data.sort((a: User, b: User) => a.name.localeCompare(b.name)) as User[];
         this.loading = false;
       });
     } catch (e) {

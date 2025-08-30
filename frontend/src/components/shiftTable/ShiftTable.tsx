@@ -13,22 +13,24 @@ import {
     TableContainer,
     TableHead,
     TableRow,
-    Typography, useMediaQuery, useTheme
+    Typography,
+    useMediaQuery,
+    useTheme
 } from '@mui/material';
-import store, {sameShift, Shift, ShiftType} from '../stores/ShiftStore';
-import AssignToShiftDialog from './AssignToShiftDialog';
+import store, {Shift, ShiftType} from '../../stores/ShiftStore';
+import AssignToShiftDialog from '../dialogs/AssignToShiftDialog';
 import AddIcon from '@mui/icons-material/Add';
-import RemoveIcon from '@mui/icons-material/Remove';
 import ShiftTableActions from './ShiftTableActions';
-import authStore from '../stores/AuthStore';
-import notificationStore from '../stores/NotificationStore';
+import authStore from '../../stores/AuthStore';
+import notificationStore from '../../stores/NotificationStore';
+import DeleteIcon from "@mui/icons-material/Delete";
 
 const days = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 const shiftTypes = ['יום', 'לילה'] as const;
 
 interface ShiftTableProps<T> {
     retrieveItemFromShift: (shift: Shift) => T | undefined;
-    getItemName: (item: T) => string;
+    getItemName: (item: T, shift?: Shift) => string;
     assignHandler: (shift: Shift, item: T) => void;
     unassignHandler: (shift: Shift) => void;
     itemList: T[];
@@ -36,12 +38,19 @@ interface ShiftTableProps<T> {
     isPendingItems?: boolean;
     onSave?: () => void;
     onCancel?: () => void;
-    retreivePendingItem?: (shift: Shift) => T | undefined;
+    retrievePendingItem?: (shift: Shift) => T | undefined;
     onDropHandler?: (e: React.DragEvent, shift: Shift) => void;
     onDragEndHandler?: () => void;
     onDragStartHandler?: (e: React.DragEvent, draggedElement: T, fromShift?: Shift) => void;
-    itemName?: string;
+    itemName: string;
     requireAdmin?: boolean;
+    isRemoveItemDisabled?: (shift: Shift) => boolean;
+    additionalContextMenuItems?: {
+        label: string;
+        icon: React.ReactNode;
+        action: (shift: Shift) => void;
+        disabled?: (shift: Shift) => boolean;
+    }[]
 }
 
 function ShiftTable<T>({
@@ -54,12 +63,14 @@ function ShiftTable<T>({
                            isPendingItems,
                            onSave,
                            onCancel,
-                           retreivePendingItem,
+                           retrievePendingItem,
                            onDropHandler,
                            onDragStartHandler,
                            onDragEndHandler,
                            itemName,
+                           isRemoveItemDisabled,
                            requireAdmin = true,
+                           additionalContextMenuItems,
                        }: ShiftTableProps<T>) {
     const theme = useTheme();
     const isNarrowScreen = useMediaQuery(theme.breakpoints.down('md')); // Switch to vertical on screens smaller than 'md' breakpoint
@@ -138,8 +149,8 @@ function ShiftTable<T>({
     };
 
     const getPendingOrAssignedItem = (shift: Shift) => {
-        if (retreivePendingItem) {
-            const pending = retreivePendingItem(shift);
+        if (retrievePendingItem) {
+            const pending = retrievePendingItem(shift);
             if (pending) return pending;
         }
         return retrieveItemFromShift(shift);
@@ -161,7 +172,7 @@ function ShiftTable<T>({
         </TableCell>
     );
 
-    const verticalTableHeader = <TableHead>
+    const VerticalTableHeader = () => <TableHead>
         <TableRow>
             <TableCell></TableCell>
             {shiftTypes.map((shiftType, i) => (
@@ -170,28 +181,28 @@ function ShiftTable<T>({
         </TableRow>
     </TableHead>
 
-    const horizontalTableHeader = <TableHead>
+    const HorizontalTableHeader = () => <TableHead>
         <TableRow>
             <TableCell></TableCell>
-            {weekDates.map((date) => (
-                <WeekDayHeaderTableCell date={date}/>
+            {weekDates.map((date, index: number) => (
+                <WeekDayHeaderTableCell key={index} date={date}/>
             ))}
         </TableRow>
     </TableHead>
 
-    const tableHeader = isNarrowScreen ? verticalTableHeader : horizontalTableHeader;
+    const tableHeader = isNarrowScreen ? <VerticalTableHeader/> : <HorizontalTableHeader/>;
 
     const createTableCell = (date: Date, shiftType: ShiftType) => {
         const shift = {date: date, type: shiftType};
         const item = getPendingOrAssignedItem(shift);
-        const isPending = retreivePendingItem?.(shift) !== undefined;
+        const isPending = retrievePendingItem?.(shift) !== undefined;
         return (
             <TableCell
                 key={date.toISOString() + shiftType}
                 align="center"
                 onDrop={e => onDrop(e, shift)}
                 onDragOver={onDragOver}
-                onClick={() => shift && handleCellClick(shift)}
+                onClick={(e) => shift && isAllContextMenuDisabledButAddItem(shift) ? handleCellClick(shift) : handleContextMenu(e, shift)}
                 onContextMenu={e => shift && handleContextMenu(e, shift)}
                 sx={{
                     minHeight: 48,
@@ -214,7 +225,14 @@ function ShiftTable<T>({
                         onDragStart={e => onDragStart(e, item, shift)}
                         onDragEnd={onDragEndHandler}
                     >
-                        {getItemName(item)}
+                        <Box sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexDirection: 'column'
+                        }}>
+                            {getItemName(item, shift)}
+                        </Box>
                     </Box>
                 ) : (
                     <Typography variant="body1" sx={{color: '#7d7bf2'}}>כונן
@@ -224,7 +242,7 @@ function ShiftTable<T>({
         );
     }
 
-    const verticalTableBody = <TableBody>
+    const VerticalTableBody = () => <TableBody>
         {weekDates.map((date) => (
             <TableRow key={date.toISOString()}>
                 <WeekDayHeaderTableCell date={date}/>
@@ -233,7 +251,7 @@ function ShiftTable<T>({
         ))}
     </TableBody>
 
-    const horizontalTableBody = <TableBody>
+    const HorizontalTableBody = () => <TableBody>
         {shiftTypes.map((shiftType, i) => (
             <TableRow key={shiftType}>
                 <ShiftTypeHeaderTableCell shiftType={shiftType}/>
@@ -242,12 +260,25 @@ function ShiftTable<T>({
         ))}
     </TableBody>
 
-    const tableBody = isNarrowScreen ? verticalTableBody : horizontalTableBody
+    const tableBody = isNarrowScreen ? <VerticalTableBody/> : <HorizontalTableBody/>
 
+    const isAllContextMenuDisabledButAddItem = (shift: Shift) => {
+        if (isRemoveItemDisabled === undefined || !(isRemoveItemDisabled(shift))) {
+            return false
+        }
+        if (additionalContextMenuItems) {
+            for (const menuItem of additionalContextMenuItems) {
+                if (menuItem.disabled !== undefined && !menuItem.disabled(shift)) {
+                    return false
+                }
+            }
+        }
+        return true
+    }
 
     return (
 
-        <Box sx={{display: 'flex', gap: 2, height: '100%', mb: 4}}>
+        <Box sx={{display: 'flex', gap: 2, height: '100%', mb: 4, flexDirection: isNarrowScreen ? 'column' : 'row'}}>
             {
                 isPendingItems && onSave && onCancel &&
                 <ShiftTableActions
@@ -267,6 +298,7 @@ function ShiftTable<T>({
                     onClose={() => setAssignDialogOpen(false)}
                     shift={selectedShift}
                     itemList={itemList}
+                    itemTitle={itemName}
                     getItemName={getItemName}
                     assignFunction={assignHandler}
                 />
@@ -283,17 +315,33 @@ function ShiftTable<T>({
                 >
                     <MenuItem onClick={handleAssignUser}>
                         <ListItemIcon>
-                            <AddIcon fontSize="small"/>
+                            <AddIcon color={'success'} fontSize="small"/>
                         </ListItemIcon>
-                        <ListItemText>הוסף {itemName}</ListItemText>
+                        <ListItemText>שבץ {itemName}</ListItemText>
                     </MenuItem>
                     <MenuItem onClick={handleRemoveItem}
-                              disabled={!contextMenu?.shift || !assignedShifts.find(s => sameShift(s, contextMenu.shift!))}>
+                              disabled={isRemoveItemDisabled && isRemoveItemDisabled(contextMenu?.shift!)}
+                    >
                         <ListItemIcon>
-                            <RemoveIcon fontSize="small"/>
+                            <DeleteIcon color={'error'} fontSize="small"/>
                         </ListItemIcon>
                         <ListItemText>הסר {itemName}</ListItemText>
                     </MenuItem>
+                    {additionalContextMenuItems && contextMenu?.shift && additionalContextMenuItems.map((menuItem, index) => (
+                        <MenuItem
+                            key={index}
+                            onClick={() => {
+                                menuItem.action(contextMenu.shift!);
+                                handleCloseContextMenu();
+                            }}
+                            disabled={menuItem.disabled && contextMenu.shift ? menuItem.disabled(contextMenu.shift) : false}
+                        >
+                            <ListItemIcon>
+                                {menuItem.icon}
+                            </ListItemIcon>
+                            <ListItemText>{menuItem.label}</ListItemText>
+                        </MenuItem>
+                    ))}
                 </Menu>
             </TableContainer>
         </Box>

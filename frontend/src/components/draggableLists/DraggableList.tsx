@@ -10,7 +10,7 @@ interface DraggableListProps<T> {
     onDrop?: (e: React.DragEvent) => void;
     contextMenuItems?: (item: T, close: () => void) => { label: string, onClick: () => void }[];
     onItemClick?: (item: T) => void;
-    renderAddButton?: () => React.ReactNode;
+    renderAddButton?: JSX.Element;
     isDragged?: boolean;
 }
 
@@ -78,45 +78,51 @@ function DraggableList<T>({
                 </Box>
             ) : (
                 <>
-                    <Box sx={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                        {renderAddButton && renderAddButton()}
-                    </Box>
-                    <Box display="flex" gap={2} flexWrap="wrap" justifyContent="center">
-                        {items.map(item => (
-                            <Box
-                                key={getKey(item)}
-                                draggable
-                                onDragStart={e => onDragStart(e, item)}
-                                onClick={onItemClick ? () => onItemClick(item) : undefined}
-                                onContextMenu={contextMenuItems ? e => handleContextMenu(e, item) : undefined}
-                                sx={{
-                                    background: theme => theme.palette.primary.main,
-                                    color: 'common.white',
-                                    px: 3,
-                                    py: 1.5,
-                                    borderRadius: 2,
-                                    fontWeight: 700,
-                                    fontSize: '1.08em',
-                                    cursor: 'grab',
-                                    boxShadow: 2,
-                                    userSelect: 'none',
-                                    transition: 'box-shadow 0.2s, transform 0.2s',
-                                    '&:active': {
-                                        background: theme => theme.palette.primary.dark,
+                    <Box sx={{
+                        display: 'flex',
+                        gap: 4,
+                        justifyContent: 'center',
+                        alignItems: 'center'
+                    }}>
+                        {renderAddButton}
+                        <Box display="flex" gap={2} flexWrap="wrap" justifyContent="center" justifySelf={'center'}
+                             alignSelf={'center'}>
+                            {items.map(item => (
+                                <Box
+                                    key={getKey(item)}
+                                    draggable
+                                    onDragStart={e => onDragStart(e, item)}
+                                    onClick={contextMenuItems ? e => handleContextMenu(e, item) : undefined}
+                                    onContextMenu={contextMenuItems ? e => handleContextMenu(e, item) : undefined}
+                                    sx={{
+                                        background: theme => theme.palette.primary.main,
                                         color: 'common.white',
-                                        boxShadow: 4,
-                                        transform: 'scale(0.97)',
-                                    },
-                                    '&:hover': {
-                                        boxShadow: 6,
-                                        transform: 'scale(1.04)',
-                                        cursor: 'pointer',
-                                    },
-                                }}
-                            >
-                                {getLabel(item)}
-                            </Box>
-                        ))}
+                                        px: 3,
+                                        py: 1.5,
+                                        borderRadius: 2,
+                                        fontWeight: 700,
+                                        fontSize: '1.08em',
+                                        cursor: 'grab',
+                                        boxShadow: 2,
+                                        userSelect: 'none',
+                                        transition: 'box-shadow 0.2s, transform 0.2s',
+                                        '&:active': {
+                                            background: theme => theme.palette.primary.dark,
+                                            color: 'common.white',
+                                            boxShadow: 4,
+                                            transform: 'scale(0.97)',
+                                        },
+                                        '&:hover': {
+                                            boxShadow: 6,
+                                            transform: 'scale(1.04)',
+                                            cursor: 'pointer',
+                                        },
+                                    }}
+                                >
+                                    {getLabel(item)}
+                                </Box>
+                            ))}
+                        </Box>
                     </Box>
                 </>
             )}

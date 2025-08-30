@@ -1,7 +1,6 @@
 package com.shiftmanagerserver.handlers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.inject.Inject;
 import com.shiftmanagerserver.entities.*;
 import com.shiftmanagerserver.service.ConstraintService;
 import com.shiftmanagerserver.service.ShiftService;
@@ -25,10 +24,10 @@ public class ShiftHandler implements Handler {
     private final ObjectMapper objectMapper;
 
     public ShiftHandler(com.shiftmanagerserver.service.ShiftService shiftService,
-                       com.shiftmanagerserver.service.UserService userService,
-                       com.shiftmanagerserver.service.ConstraintService constraintService,
-                       com.shiftmanagerserver.service.ShiftWeightSettingsService shiftWeightSettingsService,
-                       com.fasterxml.jackson.databind.ObjectMapper objectMapper) {
+                        com.shiftmanagerserver.service.UserService userService,
+                        com.shiftmanagerserver.service.ConstraintService constraintService,
+                        com.shiftmanagerserver.service.ShiftWeightSettingsService shiftWeightSettingsService,
+                        com.fasterxml.jackson.databind.ObjectMapper objectMapper) {
         this.shiftService = shiftService;
         this.userService = userService;
         this.constraintService = constraintService;
@@ -38,19 +37,19 @@ public class ShiftHandler implements Handler {
 
     public void getAllShifts(RoutingContext ctx) {
         shiftService.getAllShifts()
-            .onSuccess(shifts -> {
-                try {
-                    JsonArray arr = new JsonArray(objectMapper.writeValueAsString(shifts));
-                    ctx.response().putHeader("Content-Type", "application/json").end(arr.encode());
-                } catch (Exception e) {
-                    logger.error("Error serializing shifts", e);
+                .onSuccess(shifts -> {
+                    try {
+                        JsonArray arr = new JsonArray(objectMapper.writeValueAsString(shifts));
+                        ctx.response().putHeader("Content-Type", "application/json").end(arr.encode());
+                    } catch (Exception e) {
+                        logger.error("Error serializing shifts", e);
+                        ctx.response().setStatusCode(500).end();
+                    }
+                })
+                .onFailure(err -> {
+                    logger.error("Error fetching all shifts", err);
                     ctx.response().setStatusCode(500).end();
-                }
-            })
-            .onFailure(err -> {
-                logger.error("Error fetching all shifts", err);
-                ctx.response().setStatusCode(500).end();
-            });
+                });
     }
 
     public void addShifts(RoutingContext ctx) {
@@ -86,11 +85,11 @@ public class ShiftHandler implements Handler {
             if (constraintFutures.isEmpty()) {
                 // No assignments, just proceed
                 shiftService.addShifts(shifts)
-                    .onSuccess(v -> ctx.response().setStatusCode(201).end())
-                    .onFailure(err -> {
-                        logger.error("Error adding multiple shifts", err);
-                        ctx.response().setStatusCode(400).end();
-                    });
+                        .onSuccess(v -> ctx.response().setStatusCode(201).end())
+                        .onFailure(err -> {
+                            logger.error("Error adding multiple shifts", err);
+                            ctx.response().setStatusCode(400).end();
+                        });
                 return;
             }
 
@@ -103,13 +102,13 @@ public class ShiftHandler implements Handler {
                         @SuppressWarnings("unchecked")
                         List<com.shiftmanagerserver.entities.Constraint> constraints = (List<com.shiftmanagerserver.entities.Constraint>) results.result().list().get(idx);
                         boolean hasCant = constraints.stream().anyMatch(c ->
-                            c.getConstraintType() == ConstraintType.CANT &&
-                            c.getShift().equals(assignedShift)
+                                c.getConstraintType() == ConstraintType.CANT &&
+                                        c.getShift().equals(assignedShift)
                         );
                         if (hasCant) {
                             ctx.response().setStatusCode(400)
-                                .putHeader("Content-Type", "application/json")
-                                .end(new JsonObject().put("error", "יש ל\"" + username + "\" אילוץ במשמרת הזו").encode());
+                                    .putHeader("Content-Type", "application/json")
+                                    .end(new JsonObject().put("error", "יש ל\"" + username + "\" אילוץ במשמרת הזו").encode());
                             return;
                         }
                         idx++;
@@ -117,11 +116,11 @@ public class ShiftHandler implements Handler {
                 }
                 // No CANT constraints found, proceed
                 shiftService.addShifts(shifts)
-                    .onSuccess(v -> ctx.response().setStatusCode(201).end())
-                    .onFailure(err -> {
-                        logger.error("Error adding multiple shifts", err);
-                        ctx.response().setStatusCode(400).end();
-                    });
+                        .onSuccess(v -> ctx.response().setStatusCode(201).end())
+                        .onFailure(err -> {
+                            logger.error("Error adding multiple shifts", err);
+                            ctx.response().setStatusCode(400).end();
+                        });
             }).onFailure(err -> {
                 logger.error("Error fetching constraints for users", err);
                 ctx.response().setStatusCode(500).end("Error checking constraints");
@@ -140,7 +139,7 @@ public class ShiftHandler implements Handler {
                 ctx.response().setStatusCode(403).end("Admins only");
                 return;
             }
-            
+
             JsonObject body = ctx.body().asJsonObject();
             String dateStr = body.getString("date");
             String typeStr = body.getString("type");
@@ -150,19 +149,19 @@ public class ShiftHandler implements Handler {
             }
             Date date = objectMapper.getDateFormat().parse(dateStr);
             ShiftType type = ShiftType.fromHebrewName(typeStr);
-            
+
             shiftService.deleteShift(date, type)
-                .onSuccess(deleted -> {
-                    if (deleted) {
-                        ctx.response().setStatusCode(200).end();
-                    } else {
-                        ctx.response().setStatusCode(404).end();
-                    }
-                })
-                .onFailure(err -> {
-                    logger.error("Error deleting shift", err);
-                    ctx.response().setStatusCode(400).end();
-                });
+                    .onSuccess(deleted -> {
+                        if (deleted) {
+                            ctx.response().setStatusCode(200).end();
+                        } else {
+                            ctx.response().setStatusCode(404).end();
+                        }
+                    })
+                    .onFailure(err -> {
+                        logger.error("Error deleting shift", err);
+                        ctx.response().setStatusCode(400).end();
+                    });
         } catch (Exception e) {
             logger.error("Error parsing delete request", e);
             ctx.response().setStatusCode(400).end("Invalid request data");
@@ -177,7 +176,7 @@ public class ShiftHandler implements Handler {
                 ctx.response().setStatusCode(403).end("Admins only");
                 return;
             }
-            
+
             JsonObject body = ctx.body().asJsonObject();
             List<String> userIds = body.getJsonArray("userIds").getList();
             String startDateStr = body.getString("startDate");
@@ -283,7 +282,7 @@ public class ShiftHandler implements Handler {
                 ctx.response().setStatusCode(403).end("Admins only");
                 return;
             }
-            
+
             JsonObject body = ctx.body().asJsonObject();
             String weekStartStr = body.getString("weekStart");
             if (weekStartStr == null) {
@@ -292,19 +291,40 @@ public class ShiftHandler implements Handler {
             }
             Date weekStart = objectMapper.getDateFormat().parse(weekStartStr);
             shiftService.deleteShiftsForWeek(weekStart)
-                .onSuccess(deletedCount -> {
-                    ctx.response()
-                        .setStatusCode(200)
-                        .putHeader("Content-Type", "application/json")
-                        .end(new JsonObject().put("deleted", deletedCount).encode());
-                })
-                .onFailure(err -> {
-                    logger.error("Error deleting weekly shifts", err);
-                    ctx.response().setStatusCode(500).end();
-                });
+                    .onSuccess(deletedCount -> {
+                        ctx.response()
+                                .setStatusCode(200)
+                                .putHeader("Content-Type", "application/json")
+                                .end(new JsonObject().put("deleted", deletedCount).encode());
+                    })
+                    .onFailure(err -> {
+                        logger.error("Error deleting weekly shifts", err);
+                        ctx.response().setStatusCode(500).end();
+                    });
         } catch (Exception e) {
             logger.error("Error parsing weekStart for delete", e);
             ctx.response().setStatusCode(400).end("Invalid weekStart");
+        }
+    }
+
+    public void recalculateAllUsersScores(RoutingContext ctx) {
+        try {
+            // Permission check: only admin can recalculate shift scores
+            String role = ctx.user().principal().getString("role");
+            if (!"admin".equals(role)) {
+                ctx.response().setStatusCode(403).end("Admins only");
+                return;
+            }
+
+            shiftService.recalculateAllUserScores()
+                    .onSuccess(v -> ctx.response().setStatusCode(200).end())
+                    .onFailure(err -> {
+                        logger.error("Error recalculating all shifts scores", err);
+                        ctx.response().setStatusCode(500).end();
+                    });
+        } catch (Exception e) {
+            logger.error("Error in recalculateAllShiftsScores", e);
+            ctx.response().setStatusCode(400).end("Invalid request");
         }
     }
 
@@ -315,5 +335,6 @@ public class ShiftHandler implements Handler {
         router.delete("/api/shifts").handler(this::deleteShift);
         router.delete("/api/shifts/week").handler(this::deleteShiftsForWeek); // updated
         router.post("/api/shifts/suggest").handler(this::suggestShiftAssignment);
+        router.post("/api/shifts/recalculateAllUsersScores").handler(this::recalculateAllUsersScores);
     }
 }

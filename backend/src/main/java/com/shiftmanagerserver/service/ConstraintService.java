@@ -141,6 +141,17 @@ public class ConstraintService {
                 .onFailure(err -> logger.error("Error loading constraints", err));
     }
 
+    public Future<List<Constraint>> getUserConstraints(String username) {
+        return loadConstraintsAsync()
+                .map(v -> {
+                    if(username.equals("admin")) {
+                        return new ArrayList<>(constraints);
+                    }
+                        return new ArrayList<>(constraints).stream().filter(c -> c.getUserId().equals(username)).collect(Collectors.toList());
+                })
+                .onFailure(err -> logger.error("Error loading constraints", err));
+    }
+
     public Future<List<Constraint>> addConstraints(List<Constraint> newConstraints) {
         Promise<List<Constraint>> promise = Promise.promise();
             loadConstraintsAsync()

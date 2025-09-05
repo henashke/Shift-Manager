@@ -1,8 +1,10 @@
 import React, {useState} from 'react';
 import {observer} from 'mobx-react-lite';
-import {Box, DialogContent, FormControl, InputLabel, MenuItem, Select, SelectChangeEvent} from '@mui/material';
+import {Box, DialogContent} from '@mui/material';
 import {Shift} from '../../stores/ShiftStore';
 import CommonDialog from "./CommonDialog";
+import NativeSelect from "../basicSharedComponents/NativeSelect";
+
 
 interface AssignToShiftDialogProps<T> {
     open: boolean;
@@ -31,7 +33,7 @@ function AssignToShiftDialog<T>({
         onClose();
     };
 
-    const handleSelectChange = (event: SelectChangeEvent) => {
+    const handleSelectChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
         const newItem = Array.from(itemList.values()).find(item => getItemName(item) === event.target.value);
         if (newItem) {
             setSelectedItem(newItem);
@@ -43,23 +45,8 @@ function AssignToShiftDialog<T>({
                       title={"שבץ " + itemTitle + " ל" + shift.type}
                       content={<DialogContent sx={{direction: 'rtl'}}>
                           <Box sx={{direction: 'rtl'}}>
-
-                              <FormControl fullWidth sx={{mt: 1}}>
-                                  <InputLabel id="item-select-label">{itemTitle}</InputLabel>
-                                  <Select sx={{direction: 'ltr'}}
-                                          labelId="item-select-label"
-                                          id="item-select"
-                                          value={selectedItem ? getItemName(selectedItem) : undefined}
-                                          label="item"
-                                          onChange={handleSelectChange}
-                                  >
-                                      {itemList.map((item: T) => (
-                                          <MenuItem key={getItemName(item)} value={getItemName(item)}>
-                                              {getItemName(item)}
-                                          </MenuItem>
-                                      ))}
-                                  </Select>
-                              </FormControl>
+                              <NativeSelect title={itemTitle} options={itemList.map(getItemName)}
+                                            onChange={handleSelectChange}/>
                           </Box>
                       </DialogContent>}
                       disableConfirmButton={!selectedItem}

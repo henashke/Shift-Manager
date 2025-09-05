@@ -1,9 +1,10 @@
 import React, {useState} from 'react';
-import {FormControl, InputLabel, MenuItem, Select, SelectChangeEvent,} from '@mui/material';
+import {Box,} from '@mui/material';
 import shiftStore, {AssignedShift} from '../../stores/ShiftStore';
 import shiftWeightStore, {ShiftWeightPreset} from '../../stores/ShiftWeightStore';
 import {observer} from 'mobx-react-lite';
 import CommonDialog from "./CommonDialog";
+import NativeSelect from "../basicSharedComponents/NativeSelect";
 
 interface ChangeAssignedShiftPresetProps {
     open: boolean;
@@ -12,12 +13,12 @@ interface ChangeAssignedShiftPresetProps {
 }
 
 const ChangeAssignedShiftPresetDialog: React.FC<ChangeAssignedShiftPresetProps> = observer(({
-                                                                                          open,
-                                                                                          onClose,
-                                                                                          assignedShift,
-                                                                                      }) => {
+                                                                                                open,
+                                                                                                onClose,
+                                                                                                assignedShift,
+                                                                                            }) => {
     const [selectedPreset, setSelectedPreset] = useState<ShiftWeightPreset>(assignedShift?.preset);
-    const handlePresetChange = (event: SelectChangeEvent) => {
+    const handlePresetChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
         const newPreset = Array.from(shiftWeightStore.presets.values()).find(p => p.name === event.target.value);
         if (newPreset) {
             setSelectedPreset(newPreset);
@@ -33,24 +34,12 @@ const ChangeAssignedShiftPresetDialog: React.FC<ChangeAssignedShiftPresetProps> 
     const availablePresets = Array.from(shiftWeightStore.presets.values());
 
     return (
-        <CommonDialog open={open} title={"שינוי פריסט למשמרת"} content={
-                <FormControl fullWidth sx={{mt: 1}}>
-                    <InputLabel id="preset-select-label">פריסט</InputLabel>
-                    <Select sx={{direction: 'ltr'}}
-                            labelId="preset-select-label"
-                            id="preset-select"
-                            value={selectedPreset.name}
-                            label="Preset"
-                            onChange={handlePresetChange}
-                    >
-                        {availablePresets.map((preset) => (
-                            <MenuItem key={preset.name} value={preset.name}>
-                                {preset.name}
-                            </MenuItem>
-                        ))}
-                    </Select>
-                </FormControl>
-        } handleConfirm={handleSave} handleDialogClose={onClose} disableConfirmButton={isSaveDisabled}/>
+        <CommonDialog open={open} title={"שינוי פריסט למשמרת"}
+                      content={<Box sx={{display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
+                          <NativeSelect title={"פריסט"} options={availablePresets.map(preset => preset.name)}
+                                        onChange={handlePresetChange}/>
+                      </Box>
+                      } handleConfirm={handleSave} handleDialogClose={onClose} disableConfirmButton={isSaveDisabled}/>
     );
 });
 

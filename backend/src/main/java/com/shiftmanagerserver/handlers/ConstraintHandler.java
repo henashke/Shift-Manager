@@ -89,7 +89,7 @@ public class ConstraintHandler implements Handler {
     }
 
     public void handleGetAllConstraints(RoutingContext ctx) {
-        constraintService.getAllConstraints()
+        constraintService.getUserConstraints(ctx.user().principal().getString("username"))
             .onSuccess(constraints -> {
                 try {
                     JsonArray constraintsArray = new JsonArray(objectMapper.writeValueAsString(constraints));

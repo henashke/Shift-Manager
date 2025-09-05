@@ -145,7 +145,6 @@ const AssignmentTab: React.FC = observer(() => {
                         retrieveItemFromShift={getUserFromShift}
                         getItemName={getItemName}
                         itemList={users}
-                        assignedShifts={shiftStore.pendingAssignedShifts.concat(shiftStore.assignedShifts)}
                         isPendingItems={shiftStore.pendingAssignedShifts.length > 0}
                         onSave={shiftStore.savePendingAssignments}
                         onCancel={() => shiftStore.pendingAssignedShifts = []}

@@ -14,6 +14,7 @@ export type Constraint = {
     userId: string;
     shift: Shift;
     constraintType: ConstraintType;
+    isPending?: boolean;
 };
 
 class ConstraintStore {
@@ -28,7 +29,7 @@ class ConstraintStore {
         this.pendingConstraints = this.pendingConstraints.filter(c =>
             !(c.userId === constraint.userId && sameShift(c.shift, constraint.shift))
         );
-        this.pendingConstraints.push(constraint);
+        this.pendingConstraints.push({...constraint, isPending: true});
     }
 
     removeConstraintPending(shift: Shift, userId: string): boolean {

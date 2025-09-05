@@ -200,7 +200,8 @@ export class ShiftStore {
                     return ({
                         date: new Date(shift.date),
                         type: shift.type,
-                        assignedUsername: shift.assignedUsername || ''
+                        assignedUsername: shift.assignedUsername || '',
+                        preset: shift.preset
                     })
                 });
                 this.loading = false;

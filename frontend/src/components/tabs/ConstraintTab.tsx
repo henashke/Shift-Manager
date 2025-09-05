@@ -3,12 +3,13 @@ import {observer} from 'mobx-react-lite';
 import CalendarNavigation from '../shiftTable/CalendarNavigation';
 import DraggableList from '../draggableLists/DraggableList';
 import ShiftTable from '../shiftTable/ShiftTable';
-import {Box, Container, FormControl, MenuItem, Select, Typography} from "@mui/material";
-import {sameShift, Shift, User} from '../../stores/ShiftStore';
+import {Box, Container, Typography} from "@mui/material";
+import {sameShift, Shift} from '../../stores/ShiftStore';
 import authStore from "../../stores/AuthStore";
 import {Constraint, constraintStore, ConstraintType} from "../../stores/ConstraintStore";
 import usersStore from "../../stores/UsersStore";
 import notificationStore from "../../stores/NotificationStore";
+import NativeSelect from "../basicSharedComponents/NativeSelect";
 
 const constraintTypes = [ConstraintType.CANT, ConstraintType.PREFERS_NOT, ConstraintType.PREFERS];
 
@@ -20,14 +21,14 @@ const ConstraintTab: React.FC = observer(() => {
         constraintStore.fetchConstraint();
     }, []);
 
-    const onAssignedConstraintDragStart = (e: React.DragEvent, type: ConstraintType, fromShift?: Shift) => {
+    const onAssignedConstraintDragStart = (e: React.DragEvent, type: ConstraintType, fromShift?: Shift, username?: string) => {
         requestAnimationFrame(() => setIsDragged(true));
-        setDragData(e, type, fromShift);
+        setDragData(e, type, fromShift, username);
     };
 
-    const setDragData = (e: React.DragEvent, type: ConstraintType, fromShift?: Shift) => {
+    const setDragData = (e: React.DragEvent, type: ConstraintType, fromShift?: Shift, username?: string) => {
         e.dataTransfer.setData('application/json', JSON.stringify({
-            userId: selectedUser,
+            userId: username ?? selectedUser,
             constraintType: type,
             fromShift: fromShift || null
         }));
@@ -48,11 +49,6 @@ const ConstraintTab: React.FC = observer(() => {
                 fromShift: Shift
             } = JSON.parse(data);
             if (userId && !sameShift(fromShift, shift)) {
-                // Check if user is trying to edit their own constraints or is admin
-                if (!authStore.isAdmin() && userId !== authStore.username) {
-                    notificationStore.showConstraintUnauthorizedError();
-                    return;
-                }
                 assignConstraint(shift, constraintType);
             }
         } catch (error) {
@@ -97,38 +93,107 @@ const ConstraintTab: React.FC = observer(() => {
         });
     }
 
-    const retrieveConstraintFromShift = (shift: Shift): ConstraintType | undefined => {
-        return constraintStore.constraints.find(c => c.userId === selectedUser && sameShift({
+    const retrieveConstraintFromShift = (shift: Shift): Constraint | undefined => {
+        return constraintStore.constraints.find(c => (selectedUser === 'admin' || c.userId === selectedUser) && sameShift({
             date: c.shift.date,
             type: c.shift.type
-        }, shift))?.constraintType;
+        }, shift));
     };
 
-    const createAllConstraintsArray = () => {
-        return constraintStore.constraints
-            .map((c: Constraint) => ({type: c.shift.type, date: c.shift.date}))
-            .concat(constraintStore.pendingConstraints
-                .map((c: Constraint) => ({type: c.shift.type, date: c.shift.date})))
+    const retrievePendingConstraintFromShift = (shift: Shift): Constraint | undefined => {
+        return constraintStore.pendingConstraints.find(c => sameShift({
+            date: c.shift.date,
+            type: c.shift.type
+        }, shift));
+    };
+
+
+    const retrieveConstraintsFromShift = (shift: Shift, username?: string): Constraint[] => {
+        return constraintStore.constraints.concat(constraintStore.pendingConstraints).filter(c => (username === 'admin' || c.userId === username) && sameShift({
+            date: c.shift.date,
+            type: c.shift.type
+        }, shift));
     }
 
+    const retrieveConstraintTypeFromShift = (shift: Shift): ConstraintType | undefined => {
+        return retrieveConstraintFromShift(shift)?.constraintType;
+    };
+
     const getPendingConstraintTypeFromShift = (shift: Shift): ConstraintType | undefined => {
+        return getPendingConstraintFromShift(shift)?.constraintType;
+    }
+
+    const getPendingConstraintFromShift = (shift: Shift): Constraint | undefined => {
         return constraintStore.pendingConstraints.find(c => c.userId === selectedUser && sameShift({
             date: c.shift.date,
             type: c.shift.type
-        }, shift))?.constraintType;
+        }, shift));
+    }
+
+    function stringToColor(str: string): string {
+        // Hash string → number
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            hash = str.charCodeAt(i) + ((hash << 5) - hash);
+        }
+
+        let hue = Math.abs(hash) % 360;
+
+        // Skip the light green band (70–160°)
+        if (hue >= 70 && hue <= 110) {
+            hue = (hue + 120) % 360; // push it well away
+        }
+
+        // Slightly broader saturation & lightness for more diversity
+        const sat = 45 + (Math.abs(hash >> 2) % 50);   // 45–95%
+        const light = 30 + (Math.abs(hash >> 4) % 30); // 30–70%
+
+        return `hsl(${hue}, ${sat}%, ${light}%)`;
     }
 
     const isRemoveItemDisabled = (shift: Shift) => !constraintStore.constraints.concat(constraintStore.pendingConstraints).find(c => c.userId === selectedUser && sameShift(c.shift, shift))
+
+    const getConstraintElement = (constraintType: ConstraintType, shift: Shift) => {
+        retrievePendingConstraintFromShift(shift);
+        const allConstraintsOfShift = retrieveConstraintsFromShift(shift, selectedUser);
+        if (allConstraintsOfShift.length === 0) return <></>;
+        return <Box
+            sx={{display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1}}
+        >
+            {allConstraintsOfShift.map(c =>
+                <Box sx={{
+                    background: theme => c.isPending ? theme.palette.secondary.main : stringToColor(c.userId),
+                    color: 'common.white',
+                    borderRadius: 1,
+                    px: 1,
+                    py: 0.5,
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexDirection: 'column'
+                }}
+                     onDragStart={e => onAssignedConstraintDragStart(e, constraintType, shift, c.userId)}
+                     onDragEnd={onDragEnd} draggable
+                >
+                    {c.userId + ': ' + constraintType}
+                </Box>
+            )
+            }
+        </Box>
+    }
+
+    const selectedUserOnChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        e.target.value === '' ? setSelectedUser(authStore.username ?? '') : setSelectedUser(e.target.value)
+    }
 
     return (
         <Container maxWidth={"xl"} dir="rtl">
             <CalendarNavigation/>
             <ShiftTable itemList={constraintTypes}
-                        assignedShifts={createAllConstraintsArray()}
-                        retrieveItemFromShift={retrieveConstraintFromShift}
+                        retrieveItemFromShift={retrieveConstraintTypeFromShift}
                         assignHandler={assignConstraint}
                         unassignHandler={(shift: Shift) => {
-                            // Check if user is trying to edit their own constraints or is admin
                             if (!authStore.isAdmin() && selectedUser !== authStore.username) {
                                 notificationStore.showConstraintUnauthorizedError();
                                 return;
@@ -137,8 +202,6 @@ const ConstraintTab: React.FC = observer(() => {
                         }}
                         getItemName={(item: ConstraintType) => item.toString()}
                         retrievePendingItem={getPendingConstraintTypeFromShift}
-                        onDragStartHandler={onAssignedConstraintDragStart}
-                        onDragEndHandler={onDragEnd}
                         onDropHandler={handleShiftTableDrop}
                         isPendingItems={constraintStore.pendingConstraints.length > 0}
                         onSave={constraintStore.savePendingConstraints}
@@ -148,6 +211,7 @@ const ConstraintTab: React.FC = observer(() => {
                         itemName="אילוץ"
                         requireAdmin={false}
                         isRemoveItemDisabled={isRemoveItemDisabled}
+                        getItemElement={getConstraintElement}
             />
             <Box sx={{display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 2}}>
                 <DraggableList
@@ -159,18 +223,9 @@ const ConstraintTab: React.FC = observer(() => {
                     isDragged={isDragged}
                     renderAdditionalComponent={
                         <>
-                            <FormControl size="small" sx={{minWidth: 160, display: 'flex'}}>
                                 <Typography variant="h6">משבץ אילוצים עבור:</Typography>
-                                <Select
-                                    labelId="user-select-label"
-                                    value={selectedUser}
-                                    onChange={e => setSelectedUser(e.target.value)}
-                                >
-                                    {usersStore.users.map((user: User) => (
-                                        <MenuItem key={user.name} value={user.name}>{user.name}</MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
+                            <NativeSelect title={""} options={usersStore.users.map(user => user.name)}
+                                          onChange={selectedUserOnChange}/>
                             {!authStore.isAdmin() && selectedUser !== authStore.username && (
                                 <Typography variant="body2" color="warning.main" sx={{fontStyle: 'italic'}}>
                                     (רק צפייה - לא ניתן לערוך אילוצים של כונן אחר)

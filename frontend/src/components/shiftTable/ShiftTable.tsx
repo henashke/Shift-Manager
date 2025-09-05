@@ -32,10 +32,10 @@ const shiftTypes = ['יום', 'לילה'] as const;
 interface ShiftTableProps<T> {
     retrieveItemFromShift: (shift: Shift) => T | undefined;
     getItemName: (item: T, shift?: Shift) => string;
+    getItemElement?: (item: T, shift: Shift) => JSX.Element;
     assignHandler: (shift: Shift, item: T) => void;
     unassignHandler: (shift: Shift) => void;
     itemList: T[];
-    assignedShifts: Shift[];
     isPendingItems?: boolean;
     onSave?: () => void;
     onCancel?: () => void;
@@ -57,6 +57,7 @@ interface ShiftTableProps<T> {
 function ShiftTable<T>({
                            retrieveItemFromShift,
                            getItemName,
+                           getItemElement,
                            assignHandler,
                            unassignHandler,
                            itemList,
@@ -162,7 +163,8 @@ function ShiftTable<T>({
     };
 
     const WeekDayHeaderTableCell = ({date}: { date: Date }) => (
-        <TableCell sx={{backgroundColor: isToday(date) ? '#3a3a43' : undefined}} key={'header-' + formatDate(date)}
+        <TableCell sx={{backgroundColor: isToday(date) ? theme.palette.background.default : undefined}}
+                   key={'header-' + formatDate(date)}
                    align="center">
             <Typography variant={"h6"}>{days[date.getDay()]}</Typography>
             <Typography>{date.toLocaleDateString('he-IL', {
@@ -204,10 +206,31 @@ function ShiftTable<T>({
             date.getDate() === today.getDate();
     }
 
+    const getDefaultItemElement = (item: T, shift: Shift) => {
+        const isPending = retrievePendingItem?.(shift) !== undefined;
+        return <Box sx={{
+            background: theme => isPending ? theme.palette.secondary.main : theme.palette.primary.main,
+            color: 'common.white',
+            borderRadius: 1,
+            px: 1,
+            py: 0.5,
+            fontWeight: 700,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexDirection: 'column'
+        }}>
+            {getItemName(item, shift)}
+        </Box>
+    }
+
+    const renderItemElement = (item: T, shift: Shift) => {
+        return getItemElement ? getItemElement(item, shift) : getDefaultItemElement(item, shift);
+    }
+
     const createTableCell = (date: Date, shiftType: ShiftType) => {
         const shift = {date: date, type: shiftType};
         const item = getPendingOrAssignedItem(shift);
-        const isPending = retrievePendingItem?.(shift) !== undefined;
         return (
             <TableCell
                 key={'table-cell-' + formatDate(date) + shiftType}
@@ -220,35 +243,20 @@ function ShiftTable<T>({
                     minHeight: 48,
                     color: 'common.white',
                     cursor: 'pointer',
-                    backgroundColor: isToday(date) ? '#3a3a43' : undefined
+                    backgroundColor: isToday(date) ? theme.palette.background.default : undefined
                 }}
             >
                 {item ? (
                     <Box
                         key={"assigned-" + formatDate(date) + shiftType}
-                        sx={{
-                            background: theme => isPending ? theme.palette.secondary.main : theme.palette.primary.main,
-                            color: 'common.white',
-                            borderRadius: 1,
-                            px: 1,
-                            py: 0.5,
-                            fontWeight: 700
-                        }}
                         draggable
                         onDragStart={e => onDragStart(e, item, shift)}
                         onDragEnd={onDragEndHandler}
                     >
-                        <Box sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            flexDirection: 'column'
-                        }}>
-                            {getItemName(item, shift)}
-                        </Box>
+                        {renderItemElement(item, shift)}
                     </Box>
                 ) : (
-                    <Typography variant="body1" sx={{color: '#7d7bf2'}}>{itemName + " משובץ"}</Typography>
+                    <Typography variant="body1" sx={{color: '#7d7bf2'}}>{"שבץ " + itemName}</Typography>
                 )}
             </TableCell>
         );

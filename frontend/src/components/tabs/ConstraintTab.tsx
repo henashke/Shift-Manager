@@ -81,7 +81,6 @@ const ConstraintTab: React.FC = observer(() => {
     };
 
     const assignConstraint = (shift: Shift, constraintType: ConstraintType) => {
-        // Check if user is trying to edit their own constraints or is admin
         if (!authStore.isAdmin() && selectedUser !== authStore.username) {
             notificationStore.showConstraintUnauthorizedError();
             return;
@@ -187,6 +186,10 @@ const ConstraintTab: React.FC = observer(() => {
         e.target.value === '' ? setSelectedUser(authStore.username ?? '') : setSelectedUser(e.target.value)
     }
 
+    const getUsernames = () => {
+        return usersStore.users.filter(u => authStore.isAdmin() || u.name === authStore.username).map(u => u.name);
+    }
+
     return (
         <Container maxWidth={"xl"} dir="rtl">
             <CalendarNavigation/>
@@ -223,14 +226,10 @@ const ConstraintTab: React.FC = observer(() => {
                     isDragged={isDragged}
                     renderAdditionalComponent={
                         <>
-                                <Typography variant="h6">משבץ אילוצים עבור:</Typography>
-                            <NativeSelect title={""} options={usersStore.users.map(user => user.name)}
-                                          onChange={selectedUserOnChange}/>
-                            {!authStore.isAdmin() && selectedUser !== authStore.username && (
-                                <Typography variant="body2" color="warning.main" sx={{fontStyle: 'italic'}}>
-                                    (רק צפייה - לא ניתן לערוך אילוצים של כונן אחר)
-                                </Typography>
-                            )}
+                            <Typography variant="h6">משבץ אילוצים עבור:</Typography>
+                            <NativeSelect title={""}
+                                          options={getUsernames()}
+                                          onChange={selectedUserOnChange} hideTitleElement={!authStore.isAdmin()}/>
                         </>
                     }
                 />

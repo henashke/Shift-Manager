@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import CalendarNavigation from '../shiftTable/CalendarNavigation';
-import ShiftTable from '../shiftTable/ShiftTable';
+import ShiftTable, {stringToColor} from '../shiftTable/ShiftTable';
 import UserList from '../draggableLists/UserList';
 import {Alert, Box, Container, Snackbar} from "@mui/material";
 import usersStore from "../../stores/UsersStore";
@@ -72,8 +72,12 @@ const AssignmentTab: React.FC = observer(() => {
         return users.find(u => shiftStore.getAssignedShift(shift)?.assignedUsername === u.name);
     }
 
-    const getPendingUserFromShift = (shift: Shift): User | undefined => {
-        return users.find(u => u.name === shiftStore.pendingAssignedShifts.find(assignedShift => sameShift(assignedShift, shift))?.assignedUsername)
+    const getPendingOrAssignedUserFromShift = (shift: Shift): User | undefined => {
+        return users.find(u => u.name === shiftStore.pendingAssignedShifts.concat(shiftStore.assignedShifts).find(assignedShift => sameShift(assignedShift, shift))?.assignedUsername)
+    }
+
+    const getPendingOrAssignedShift = (shift: Shift): AssignedShift | undefined => {
+        return shiftStore.pendingAssignedShifts.concat(shiftStore.assignedShifts).find(assignedShift => sameShift(assignedShift, shift))
     }
 
     const handleSuggestOpen = () => {
@@ -129,6 +133,32 @@ const AssignmentTab: React.FC = observer(() => {
         return user.name + ' (' + shiftStore.getAssignedOrPendingShift(shift)?.preset?.name + ')'
     }
 
+    const getAssignmentElement = (user: User, shift: Shift) => {
+        const assignedShift = getPendingOrAssignedShift(shift);
+        if (!assignedShift) return <></>;
+        return <Box
+            sx={{display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1}}
+        >
+            <Box sx={{
+                background: theme => assignedShift.isPending ? theme.palette.secondary.main : stringToColor(assignedShift.assignedUsername),
+                color: 'common.white',
+                borderRadius: 1,
+                px: 1,
+                py: 0.5,
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexDirection: 'column'
+            }}
+                 onDragStart={e => onDragStart(e, user, shift)}
+                 onDragEnd={onDragEnd} draggable
+            >
+                {user.name + ' (' + assignedShift.preset.name + ')'}
+            </Box>
+        </Box>
+    }
+
     return (
         <Container maxWidth={"xl"} dir={"rtl"}>
             <CalendarNavigation/>
@@ -141,7 +171,7 @@ const AssignmentTab: React.FC = observer(() => {
                         onDragEndHandler={onDragEnd}
                         assignHandler={assignHandler}
                         unassignHandler={shift => shiftStore.unassignUser(shift)}
-                        retrievePendingItem={getPendingUserFromShift}
+                        retrievePendingItem={getPendingOrAssignedUserFromShift}
                         retrieveItemFromShift={getUserFromShift}
                         getItemName={getItemName}
                         itemList={users}
@@ -152,13 +182,14 @@ const AssignmentTab: React.FC = observer(() => {
                         additionalContextMenuItems={[{
                             label: 'שנה פריסט',
                             action: (shift: Shift) => {
-                                setSelectedShift(shiftStore.getAssignedShift(shift));
+                                setSelectedShift(getPendingOrAssignedShift(shift));
                                 setIsChangePresetDialogOpen(true);
                             },
                             icon: <SwapHoriz color={'primary'}/>,
                             disabled: (shift: Shift) => !shiftStore.getAssignedShift(shift)
                         }]}
                         isRemoveItemDisabled={(shift: Shift) => !shiftStore.getAssignedOrPendingShift(shift)}
+                        getItemElement={getAssignmentElement}
             />
             <SuggestAssignmentsDialog handleConfirm={handleSuggestConfirm}
                                       open={suggestDialogOpen}

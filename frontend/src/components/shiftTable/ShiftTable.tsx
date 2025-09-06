@@ -368,5 +368,26 @@ function ShiftTable<T>({
     );
 }
 
+export function stringToColor(str: string): string {
+    // Hash string → number
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+
+    let hue = Math.abs(hash) % 360;
+
+    // Skip the light green band (70–160°)
+    if (hue >= 70 && hue <= 110) {
+        hue = (hue + 120) % 360; // push it well away
+    }
+
+    // Slightly broader saturation & lightness for more diversity
+    const sat = 45 + (Math.abs(hash >> 2) % 50);   // 45–95%
+    const light = 30 + (Math.abs(hash >> 4) % 30); // 30–70%
+
+    return `hsl(${hue}, ${sat}%, ${light}%)`;
+}
+
 const ObserverShiftTable = observer(ShiftTable) as typeof ShiftTable;
 export default ObserverShiftTable;

@@ -1,12 +1,8 @@
 import {makeAutoObservable, runInAction} from 'mobx';
 import config from '../config';
 import authStore from './AuthStore';
-
-export interface User {
-  id: string;
-  name: string;
-  score: number;
-}
+import notificationStore from "./NotificationStore";
+import {User} from "./ShiftStore";
 
 class UserStore {
   users: User[] = [];
@@ -14,11 +10,9 @@ class UserStore {
 
   constructor() {
     makeAutoObservable(this);
-    // Don't fetch automatically - will be called when needed
   }
 
   fetchUsers = async () => {
-    // Only fetch if authenticated
     if (!authStore.isAuthenticated()) {
       return;
     }
@@ -41,6 +35,35 @@ class UserStore {
         this.loading = false;
         console.error('Failed to fetch users', e);
       });
+    }
+  };
+
+  editUser = async (user: User) => {
+    if (!authStore.isAdmin()) {
+      notificationStore.showUnauthorizedError();
+    }
+
+    try {
+      const res = await fetch(`${config.API_BASE_URL}/users/${user.name}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...authStore.getAuthHeaders()
+        },
+        body: JSON.stringify(user)
+      });
+      if (!res.ok) {
+        throw new Error(`Failed to edit user: ${res.status}`);
+      }
+      runInAction(() => {
+        const index = this.users.findIndex(u => u.name === user.name);
+        if (index !== -1) {
+          this.users[index] = user;
+        }
+      });
+    } catch (e) {
+      console.error('Failed to edit user', e);
+      throw e;
     }
   };
 }

@@ -2,7 +2,7 @@ import React, {useEffect, useState} from 'react';
 import {observer} from 'mobx-react-lite';
 import CalendarNavigation from '../shiftTable/CalendarNavigation';
 import DraggableList from '../draggableLists/DraggableList';
-import ShiftTable from '../shiftTable/ShiftTable';
+import ShiftTable, {stringToColor} from '../shiftTable/ShiftTable';
 import {Box, Container, Typography} from "@mui/material";
 import {sameShift, Shift} from '../../stores/ShiftStore';
 import authStore from "../../stores/AuthStore";
@@ -99,14 +99,6 @@ const ConstraintTab: React.FC = observer(() => {
         }, shift));
     };
 
-    const retrievePendingConstraintFromShift = (shift: Shift): Constraint | undefined => {
-        return constraintStore.pendingConstraints.find(c => sameShift({
-            date: c.shift.date,
-            type: c.shift.type
-        }, shift));
-    };
-
-
     const retrieveConstraintsFromShift = (shift: Shift, username?: string): Constraint[] => {
         return constraintStore.constraints.concat(constraintStore.pendingConstraints).filter(c => (username === 'admin' || c.userId === username) && sameShift({
             date: c.shift.date,
@@ -129,31 +121,9 @@ const ConstraintTab: React.FC = observer(() => {
         }, shift));
     }
 
-    function stringToColor(str: string): string {
-        // Hash string → number
-        let hash = 0;
-        for (let i = 0; i < str.length; i++) {
-            hash = str.charCodeAt(i) + ((hash << 5) - hash);
-        }
-
-        let hue = Math.abs(hash) % 360;
-
-        // Skip the light green band (70–160°)
-        if (hue >= 70 && hue <= 110) {
-            hue = (hue + 120) % 360; // push it well away
-        }
-
-        // Slightly broader saturation & lightness for more diversity
-        const sat = 45 + (Math.abs(hash >> 2) % 50);   // 45–95%
-        const light = 30 + (Math.abs(hash >> 4) % 30); // 30–70%
-
-        return `hsl(${hue}, ${sat}%, ${light}%)`;
-    }
-
     const isRemoveItemDisabled = (shift: Shift) => !constraintStore.constraints.concat(constraintStore.pendingConstraints).find(c => c.userId === selectedUser && sameShift(c.shift, shift))
 
     const getConstraintElement = (constraintType: ConstraintType, shift: Shift) => {
-        retrievePendingConstraintFromShift(shift);
         const allConstraintsOfShift = retrieveConstraintsFromShift(shift, selectedUser);
         if (allConstraintsOfShift.length === 0) return <></>;
         return <Box

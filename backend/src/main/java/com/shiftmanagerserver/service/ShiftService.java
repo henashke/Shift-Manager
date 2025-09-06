@@ -605,7 +605,18 @@ public class ShiftService {
             userService.getAllUsers().onSuccess(users -> {
                 Map<String, Integer> newUserScores = new HashMap<>();
                 for (User u : users) {
-                    newUserScores.put(u.getName(), 0);
+                    // Find this user's first shift
+                    Optional<AssignedShift> firstShiftOpt = shifts.stream()
+                        .filter(s -> u.getName().equals(s.getAssignedUsername()))
+                        .min(Comparator.comparing(AssignedShift::getDate));
+                    Date firstShiftDate = firstShiftOpt.map(AssignedShift::getDate).orElse(null);
+                    // Sum all shift weights up until this user's first shift
+                    int sumPoints = shifts.stream()
+                        .filter(s -> firstShiftDate == null || s.getDate().before(firstShiftDate))
+                        .mapToInt(this::getShiftWeight)
+                        .sum();
+                    int initialScore = !users.isEmpty() ? sumPoints / users.size() : 0;
+                    newUserScores.put(u.getName(), initialScore);
                 }
                 for (AssignedShift s : shifts) {
                     if (!newUserScores.containsKey(s.getAssignedUsername())) {
@@ -614,9 +625,13 @@ public class ShiftService {
                     newUserScores.put(s.getAssignedUsername(), newUserScores.get(s.getAssignedUsername()) + getShiftWeight(s));
                 }
                 for (User u : users) {
+                    OptionalDouble averageScore = users.stream().mapToInt(User::getScore).average();
+                    if (u.getScore() == 0) {
+                        u.setScore((int) averageScore.orElse(0));
+                    }
                     u.setScore(newUserScores.getOrDefault(u.getName(), 0));
                 }
-                promise.complete();
+                userService.saveUsersAsync().onSuccess(promise::complete).onFailure(promise::fail);
             }).onFailure(promise::fail);
         }).onFailure(promise::fail);
 

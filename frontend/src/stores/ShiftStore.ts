@@ -19,6 +19,7 @@ export interface Shift {
 export interface AssignedShift extends Shift {
     assignedUsername: string;
     preset: ShiftWeightPreset;
+    isPending?: boolean;
 }
 
 export class ShiftStore {
@@ -45,7 +46,6 @@ export class ShiftStore {
     }
 
     fetchShifts = async () => {
-        // Only fetch if authenticated
         if (!authStore.isAuthenticated()) {
             return;
         }
@@ -99,11 +99,6 @@ export class ShiftStore {
         }
     };
 
-    addUser = (name: string) => {
-        // Use userStore to add users instead
-        // This method can be removed or refactored if not needed
-    };
-
     getAssignedShift = (shift: Shift): AssignedShift | undefined => {
         return this.assignedShifts.find(assignedShift => sameShift(assignedShift, shift));
     }
@@ -117,32 +112,20 @@ export class ShiftStore {
         this.fetchShifts();
     }
 
-    // Add a shift to the pending array
     assignShiftPending = (shift: AssignedShift) => {
-        // Remove any existing pending assignment for the same shift (date+type)
-        this.pendingAssignedShifts = this.pendingAssignedShifts.filter(s =>
-            !(s.date.getTime() === shift.date.getTime() && s.type === shift.type)
-        );
-        this.pendingAssignedShifts.push(shift);
+        this.pendingAssignedShifts = this.pendingAssignedShifts.filter(s => !sameShift(s, shift));
+        this.pendingAssignedShifts.push({...shift, isPending: true});
     };
 
-    // Helper to merge pending shifts into assignedShifts
     mergePendingToAssigned = () => {
         this.pendingAssignedShifts.forEach(pending => {
-            const idx = this.assignedShifts.findIndex(s =>
-                s.date.getTime() === pending.date.getTime() && s.type === pending.type
-            );
-            if (idx !== -1) {
-                this.assignedShifts[idx] = pending;
-            } else {
-                this.assignedShifts.push(pending);
-            }
+            this.assignedShifts = this.assignedShifts.filter(s => !sameShift(s, pending));
+            this.assignedShifts.push({...pending, isPending: false});
         });
         this.pendingAssignedShifts = [];
         this.loading = false;
     };
 
-    // Save all pending assignments to the server
     savePendingAssignments = async () => {
         this.loading = true;
         try {
@@ -177,7 +160,6 @@ export class ShiftStore {
         }
     };
 
-    // Suggest shift assignments for selected users
     async suggestShiftAssignments(userIds: string[], startDate: Date, endDate: Date) {
         this.loading = true;
         try {
@@ -200,7 +182,9 @@ export class ShiftStore {
                     return ({
                         date: new Date(shift.date),
                         type: shift.type,
-                        assignedUsername: shift.assignedUsername || ''
+                        assignedUsername: shift.assignedUsername || '',
+                        preset: shift.preset,
+                        isPending: true
                     })
                 });
                 this.loading = false;

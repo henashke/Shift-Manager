@@ -13,7 +13,7 @@ const UserList: React.FC<{ isDragged?: boolean, setIsDragged?: (val: boolean) =>
     const {users} = usersStore;
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-    const [selectedUser, setSelectedUser] = useState<User | undefined>(undefined);
+    const [selectedUserName, setSelectedUserName] = useState<string | undefined>(undefined);
     const [infoDialogOpen, setInfoDialogOpen] = useState(false);
 
     const deleteAreaOnDropHandler = (e: React.DragEvent) => {
@@ -38,12 +38,12 @@ const UserList: React.FC<{ isDragged?: boolean, setIsDragged?: (val: boolean) =>
             notificationStore.showUnauthorizedError();
             return;
         }
-        setSelectedUser(user);
+        setSelectedUserName(user.name);
         setEditDialogOpen(true);
     };
 
     const handleInfoDialogOpen = (user: User) => {
-        setSelectedUser(user);
+        setSelectedUserName(user.name);
         setInfoDialogOpen(true);
     };
 
@@ -52,7 +52,7 @@ const UserList: React.FC<{ isDragged?: boolean, setIsDragged?: (val: boolean) =>
             notificationStore.showUnauthorizedError();
             return;
         }
-        setSelectedUser(user);
+        setSelectedUserName(user.name);
         setDeleteDialogOpen(true);
     };
 
@@ -67,11 +67,6 @@ const UserList: React.FC<{ isDragged?: boolean, setIsDragged?: (val: boolean) =>
     const handleConfirmDelete = () => {
         // Implement delete logic here
         handleDeleteDialogClose();
-    };
-
-    const handleConfirmEdit = () => {
-        // Implement edit logic here
-        handleEditDialogClose();
     };
 
     return (
@@ -89,17 +84,17 @@ const UserList: React.FC<{ isDragged?: boolean, setIsDragged?: (val: boolean) =>
                     {label: 'מחק', onClick: () => handleDeleteDialogOpen(user)},
                 ]}
                 isDragged={isDragged}
+                colorful
             />
             <EditUser open={editDialogOpen}
                        handleDialogClose={handleEditDialogClose}
-                       handleConfirm={handleConfirmEdit}
-                       user={selectedUser}/>
+                      username={selectedUserName}/>
             <DeleteUserDialog
                 open={deleteDialogOpen}
                 handleDialogClose={handleDeleteDialogClose}
                 handleConfirm={handleConfirmDelete}
-                selectedUser={selectedUser}/>
-            <UserInfoDialog open={infoDialogOpen} user={selectedUser} onClose={() => setInfoDialogOpen(false)}/>
+                selectedUsername={selectedUserName}/>
+            <UserInfoDialog open={infoDialogOpen} username={selectedUserName} onClose={() => setInfoDialogOpen(false)}/>
         </>
     );
 });

@@ -4,11 +4,7 @@ import {
     Button,
     Container,
     Divider,
-    FormControl,
-    MenuItem,
     Paper,
-    Select,
-    SelectChangeEvent,
     Table,
     TableBody,
     TableCell,
@@ -27,6 +23,7 @@ import notificationStore from '../../stores/NotificationStore';
 import RecalculateDialog from "../dialogs/RecalculateDialog";
 import DangerousButton from "../basicSharedComponents/DangerousButton";
 import BasicButton from "../basicSharedComponents/BasicButton";
+import NativeSelect from "../basicSharedComponents/NativeSelect";
 
 const daysOfWeek = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 const shiftTypes: ShiftType[] = ['יום', 'לילה'];
@@ -91,7 +88,7 @@ const SettingsTab: React.FC = observer(() => {
         }));
     };
 
-    const handlePresetSelect = (event: SelectChangeEvent) => {
+    const handlePresetSelect = (event: React.ChangeEvent<HTMLSelectElement>) => {
         setPreset(event.target.value as string);
         shiftWeightStore.setPendingPresetFromName(event.target.value as string);
     };
@@ -157,18 +154,8 @@ const SettingsTab: React.FC = observer(() => {
             <Box>
                 <Box sx={{mb: 3, display: 'flex', alignItems: 'center', gap: 2}}>
                     <span style={{fontWeight: 700, fontSize: '1.2em'}}>מציג פריסט:</span>
-                    <FormControl size="small" sx={{minWidth: 200}}>
-                        <Select
-                            value={preset}
-                            onChange={handlePresetSelect}
-                            displayEmpty
-                            renderValue={() => preset || <span style={{color: '#aaa'}}>בחר פריסט</span>}
-                        >
-                            {presetOptions.map(option => (
-                                <MenuItem key={option} value={option}>{option}</MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
+                    <NativeSelect title={"פריסט"} options={presetOptions} onChange={handlePresetSelect}
+                                  hideTitleElement/>
                     {showSaveButton && (
                         <Button variant="contained" color="primary" onClick={handleSave} sx={{ml: 2}}>
                             שמור

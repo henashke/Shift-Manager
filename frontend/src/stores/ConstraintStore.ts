@@ -65,14 +65,9 @@ class ConstraintStore {
 
     mergePendingToConstraints() {
         this.pendingConstraints.forEach(pending => {
-            const idx = this.constraints.findIndex(c =>
-                c.userId === pending.userId && sameShift(c.shift, pending.shift)
-            );
-            if (idx !== -1) {
-                this.constraints[idx] = pending;
-            } else {
-                this.constraints.push(pending);
-            }
+            this.constraints = this.constraints.filter(c =>
+                !(c.userId === pending.userId && sameShift(c.shift, pending.shift)));
+            this.constraints.push({...pending, isPending: false});
         });
         this.pendingConstraints = [];
     }
@@ -80,6 +75,7 @@ class ConstraintStore {
     get hasPendingConstraints() {
         return this.pendingConstraints.length > 0;
     }
+
     async removeConstraint(shift: Shift, userId?: string) {
         const targetUserId = userId || authStore.username!;
         const removedFromPendingConstraints = this.removeConstraintPending(shift, targetUserId);
@@ -125,7 +121,7 @@ class ConstraintStore {
         if (!authStore.isAuthenticated()) {
             return;
         }
-        
+
         const url = `${config.API_BASE_URL}/constraints`;
         const res = await fetch(url, {
             headers: authStore.getAuthHeaders()

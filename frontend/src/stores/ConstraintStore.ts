@@ -1,4 +1,4 @@
-import {makeAutoObservable} from 'mobx';
+import {makeAutoObservable, reaction} from 'mobx';
 import {sameShift, Shift} from "./ShiftStore";
 import config from "../config";
 import authStore from "./AuthStore";
@@ -17,12 +17,48 @@ export type Constraint = {
     isPending?: boolean;
 };
 
+const PENDING_CONSTRAINTS_KEY_PREFIX = 'pendingConstraints:';
+
 class ConstraintStore {
     constraints: Constraint[] = [];
     pendingConstraints: Constraint[] = [];
 
     constructor() {
         makeAutoObservable(this);
+        try {
+            const key = this.getStorageKey();
+            const saved = key ? localStorage.getItem(key) : null;
+            if (saved) {
+                const parsed: Constraint[] = JSON.parse(saved);
+                this.pendingConstraints = parsed.map(c => ({
+                    ...c,
+                    shift: {
+                        ...c.shift,
+                        date: new Date(c.shift.date as any)
+                    },
+                    isPending: true
+                }));
+            }
+        } catch (e) {
+            console.warn('Failed to load pendingConstraints from localStorage', e);
+        }
+
+        reaction(
+            () => this.pendingConstraints.map(c => ({
+                userId: c.userId,
+                constraintType: c.constraintType,
+                shift: {date: c.shift.date.getTime(), type: c.shift.type}
+            })),
+            (serialized) => {
+                try {
+                    const key = this.getStorageKey();
+                    if (!key) return;
+                    localStorage.setItem(key, JSON.stringify(serialized));
+                } catch (e) {
+                    console.warn('Failed to save pendingConstraints to localStorage', e);
+                }
+            }
+        );
     }
 
     addConstraintPending(constraint: Constraint) {
@@ -61,6 +97,12 @@ class ConstraintStore {
             console.error('Failed to save pending constraints', e);
             notificationStore.showError('שגיאה בשמירת האילוצים');
         }
+    }
+
+    private getStorageKey(): string | null {
+        const username = authStore.username;
+        if (!username) return null;
+        return `${PENDING_CONSTRAINTS_KEY_PREFIX}${username}`;
     }
 
     mergePendingToConstraints() {

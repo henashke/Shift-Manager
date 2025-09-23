@@ -1,4 +1,4 @@
-import {makeAutoObservable, runInAction} from "mobx";
+import {makeAutoObservable, reaction, runInAction} from "mobx";
 import config from "../config";
 import authStore from "./AuthStore";
 import notificationStore from "./NotificationStore";
@@ -22,6 +22,8 @@ export interface AssignedShift extends Shift {
     isPending?: boolean;
 }
 
+const PENDING_SHIFT_STORAGE_KEY = 'pendingAssignedShifts';
+
 export class ShiftStore {
     assignedShifts: AssignedShift[] = [];
     pendingAssignedShifts: AssignedShift[] = [];
@@ -30,7 +32,23 @@ export class ShiftStore {
 
     constructor() {
         makeAutoObservable(this);
-        // Don't fetch automatically - will be called when needed
+        const savedPending = localStorage.getItem(PENDING_SHIFT_STORAGE_KEY);
+        if (savedPending) {
+            try {
+                const parsed = JSON.parse(savedPending);
+                this.pendingAssignedShifts = parsed.map((shift: any) => ({
+                    ...shift,
+                    date: new Date(shift.date)
+                }));
+            } catch {
+            }
+        }
+        reaction(
+            () => this.pendingAssignedShifts.slice(),
+            (pending) => {
+                localStorage.setItem(PENDING_SHIFT_STORAGE_KEY, JSON.stringify(pending));
+            }
+        );
     }
 
     get weekDates() {
@@ -49,7 +67,7 @@ export class ShiftStore {
         if (!authStore.isAuthenticated()) {
             return;
         }
-        
+
         this.loading = true;
         try {
             const response = await fetch(`${config.API_BASE_URL}/shifts`, {
@@ -143,7 +161,8 @@ export class ShiftStore {
                     try {
                         const data = await response.json();
                         if (data && data.error) errorMsg = data.error;
-                    } catch {}
+                    } catch {
+                    }
                     notificationStore.showError(errorMsg);
                 }
                 return;
@@ -205,7 +224,7 @@ export class ShiftStore {
             const response = await fetch(`${config.API_BASE_URL}/shifts/week`, {
                 method: 'DELETE',
                 headers: authStore.getAuthHeaders(),
-                body: JSON.stringify({ weekStart: weekStart.toISOString().slice(0, 10) })
+                body: JSON.stringify({weekStart: weekStart.toISOString().slice(0, 10)})
             });
             if (!response.ok) {
                 if (response.status === 403) {

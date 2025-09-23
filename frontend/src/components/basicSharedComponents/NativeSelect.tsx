@@ -5,6 +5,7 @@ import {styled} from "@mui/material";
 interface NativeSelectProps {
     title: string;
     options: string[];
+    defaultValue?: string;
     onChange: (event: React.ChangeEvent<HTMLSelectElement>) => void;
     hideTitleElement?: boolean;
     disabled?: boolean;
@@ -25,10 +26,17 @@ const StyledSelect = styled("select")(({theme}) => ({
     }),
 }));
 
-const NativeSelect: React.FC<NativeSelectProps> = observer(({title, options, disabled, onChange, hideTitleElement}) => {
+const NativeSelect: React.FC<NativeSelectProps> = observer(({
+                                                                title,
+                                                                options,
+                                                                disabled,
+                                                                onChange,
+                                                                hideTitleElement,
+                                                                defaultValue
+                                                            }) => {
     return (
-        <StyledSelect onChange={onChange} disabled={disabled}>
-            {hideTitleElement ? <></> : <option value="" selected>{title}</option>}
+        <StyledSelect onChange={onChange} disabled={disabled} defaultValue={defaultValue ?? ""}>
+            {hideTitleElement ? <></> : <option value="">{title}</option>}
             {options.map(option => <option key={option} value={option}>{option}</option>)}
         </StyledSelect>
     );

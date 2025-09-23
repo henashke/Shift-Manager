@@ -36,6 +36,7 @@ interface ShiftTableProps<T> {
     assignHandler: (shift: Shift, item: T) => void;
     unassignHandler: (shift: Shift) => void;
     itemList: T[];
+    defaultItem?: T;
     isPendingItems?: boolean;
     onSave?: () => void;
     onCancel?: () => void;
@@ -61,6 +62,7 @@ function ShiftTable<T>({
                            assignHandler,
                            unassignHandler,
                            itemList,
+                           defaultItem,
                            isPendingItems,
                            onSave,
                            onCancel,
@@ -318,6 +320,7 @@ function ShiftTable<T>({
                     onClose={() => setAssignDialogOpen(false)}
                     shift={selectedShift}
                     itemList={itemList}
+                    defaultItem={defaultItem}
                     itemTitle={itemName}
                     getItemName={getItemName}
                     assignFunction={assignHandler}

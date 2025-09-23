@@ -11,6 +11,7 @@ interface AssignToShiftDialogProps<T> {
     onClose: () => void;
     shift: Shift | null;
     itemList: T[];
+    defaultItem?: T;
     itemTitle: string;
     getItemName: (item: T) => string;
     assignFunction: (shift: Shift, item: T) => void;
@@ -21,11 +22,12 @@ function AssignToShiftDialog<T>({
                                     onClose,
                                     shift,
                                     itemList,
+                                    defaultItem,
                                     itemTitle,
                                     getItemName,
                                     assignFunction
                                 }: AssignToShiftDialogProps<T>) {
-    const [selectedItem, setSelectedItem] = useState<T | undefined>(undefined);
+    const [selectedItem, setSelectedItem] = useState<T | undefined>(defaultItem);
 
     if (!shift) return <></>;
     const handleAssign = (item: T) => {
@@ -46,7 +48,8 @@ function AssignToShiftDialog<T>({
                       content={<DialogContent sx={{direction: 'rtl'}}>
                           <Box sx={{direction: 'rtl'}}>
                               <NativeSelect title={itemTitle} options={itemList.map(getItemName)}
-                                            onChange={handleSelectChange}/>
+                                            onChange={handleSelectChange}
+                                            defaultValue={defaultItem ? getItemName(defaultItem) : ''}/>
                           </Box>
                       </DialogContent>}
                       disableConfirmButton={!selectedItem}

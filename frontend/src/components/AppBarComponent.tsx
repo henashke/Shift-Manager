@@ -1,12 +1,16 @@
 import React, {useState} from 'react';
-import {AppBar, Box, IconButton, Menu, MenuItem, Tab, Tabs, Toolbar, Tooltip, Typography} from '@mui/material';
+import {AppBar, Avatar, Box, IconButton, Menu, MenuItem, Tab, Tabs, Toolbar, Tooltip, Typography} from '@mui/material';
 import {DarkMode, LightMode} from '@mui/icons-material';
 import LoginIcon from '@mui/icons-material/Login';
 import {useNavigate} from 'react-router-dom';
 import authStore from "../stores/AuthStore";
 import LogoutDialog from "./dialogs/LogoutDialog";
+import {stringToColor} from "./shiftTable/ShiftTable";
 
-export const AppBarComponent = ({darkMode, setDarkMode} : {darkMode: boolean, setDarkMode: (isDarkMode: boolean) => void}) => {
+export const AppBarComponent = ({darkMode, setDarkMode}: {
+    darkMode: boolean,
+    setDarkMode: (isDarkMode: boolean) => void
+}) => {
     const navigate = useNavigate();
     const [tabValue, setTabValue] = useState(() => {
         if (window.location.pathname.startsWith('/constraints')) return 1;
@@ -18,8 +22,6 @@ export const AppBarComponent = ({darkMode, setDarkMode} : {darkMode: boolean, se
     const [logoutOpen, setLogoutOpen] = useState(false);
 
 
-
-
     const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
         setTabValue(newValue);
         if (newValue === 0) navigate('/');
@@ -27,13 +29,12 @@ export const AppBarComponent = ({darkMode, setDarkMode} : {darkMode: boolean, se
         if (newValue === 2) navigate('/settings');
     };
 
-    return <AppBar position="sticky" color="primary" sx={{mb: 4}}>
+    return <AppBar position="sticky" color="primary" sx={{mb: 2}}>
         <Toolbar sx={{justifyContent: 'space-between'}}>
             <Box sx={{display: 'flex', alignItems: 'center', flex: 1}}>
                 <IconButton
                     aria-label="toggle theme"
                     onClick={() => setDarkMode(!darkMode)}
-                    sx={{ml: 2, verticalAlign: 'middle'}}
                     size="large"
                 >
                     {darkMode ? <LightMode sx={{color: '#ffe066'}}/> : <DarkMode sx={{color: '#23272f'}}/>}
@@ -52,24 +53,17 @@ export const AppBarComponent = ({darkMode, setDarkMode} : {darkMode: boolean, se
                     </IconButton>
                 )}
                 {authStore.isAuthenticated() && (
-                    <Box sx={{direction: 'rtl', ml: 2, display: 'flex', alignItems: 'center'}}>
-                        <Tooltip title="אפשרויות משתמש">
-                            <Typography
-                                sx={{
-                                    fontWeight: 600,
-                                    cursor: 'pointer',
-                                    textDecoration: 'underline',
-                                    textDecorationColor: 'transparent',
-                                    transition: 'text-decoration-color 0.2s',
-                                    '&:hover': {
-                                        textDecorationColor: '#61dafb',
-                                    },
-                                }}
-                                onClick={e => setAnchorEl(e.currentTarget)}
-                            >
-                                {`שלום, ${authStore.username}`}
-                            </Typography>
-                        </Tooltip>
+                    <>
+                        {authStore.username &&
+                            <Tooltip title="אפשרויות משתמש">
+                                <Avatar sx={{bgcolor: stringToColor(authStore.username), cursor: 'pointer'}}
+                                        onClick={e => setAnchorEl(e.currentTarget)}>
+                                    <Typography variant={"button"} sx={{color: 'common.white'}}>
+                                        {authStore.username[0]}
+                                    </Typography>
+                                </Avatar>
+                            </Tooltip>
+                        }
                         <Menu
                             anchorEl={anchorEl}
                             open={menuOpen}
@@ -82,7 +76,7 @@ export const AppBarComponent = ({darkMode, setDarkMode} : {darkMode: boolean, se
                                 setLogoutOpen(true);
                             }}>יציאה</MenuItem>
                         </Menu>
-                    </Box>
+                    </>
                 )}
                 <LogoutDialog
                     open={logoutOpen}

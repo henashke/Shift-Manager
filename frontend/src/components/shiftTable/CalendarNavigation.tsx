@@ -12,13 +12,13 @@ const CalendarNavigation: React.FC = observer(() => {
 
 
     return (
-        <Box display="flex" alignItems="center" justifyContent="center" gap={2} mb={3}>
+        <Box display="flex" alignItems="center" justifyContent="center" gap={1} mb={2}>
             <Fab variant={"extended"} color={"primary"} sx={{flexShrink: 0}}
                  onClick={handlePrevWeekClick}><ChevronRight/></Fab>
-            <Typography variant="h6" sx={{px: 2, borderRadius: 2}}>
-                {formatDate(weekDates[0])}
-                {' - '}
+            <Typography variant="subtitle1" sx={{px: 2, borderRadius: 2}}>
                 {formatDate(weekDates[6])}
+                {' - '}
+                {formatDate(weekDates[0])}
             </Typography>
             <Fab variant={"extended"} color={"primary"} sx={{flexShrink: 0}}
                  onClick={handleNextWeekClick}><ChevronLeft/></Fab>

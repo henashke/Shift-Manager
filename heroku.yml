@@ -1,0 +1,7 @@
+# heroku.yml
+build:
+  docker:
+    web: Dockerfile
+
+run:
+  web: java -Dserver.port=$PORT -jar app.jar

@@ -33,7 +33,7 @@ public class MainVerticle extends AbstractVerticle {
 
     @Inject
     public MainVerticle(
-            @Named("application.port") Integer port,
+            @Named("PORT") Integer port,
             @Named("redis.url") String redisUrl,
             @Named("redis.token") String redisToken,
             Router router,

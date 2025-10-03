@@ -110,6 +110,46 @@ class ShiftWeightStore {
     setPendingPreset(preset: ShiftWeightPreset) {
         this.pendingPreset = {...preset, weights: preset.weights.map(w => ({...w}))};
     }
+
+    async backupSystemData() {
+        try {
+            const res = await fetch(`${config.API_BASE_URL}/backup`, {
+                method: 'GET',
+                headers: authStore.getAuthHeaders()
+            });
+            if (!res.ok) {
+                if (res.status === 403) {
+                    notificationStore.showUnauthorizedError();
+                } else {
+                    notificationStore.showError('גיבוי נכשל');
+                }
+                return;
+            }
+            const now = new Date();
+            const pad = (n: number) => n.toString().padStart(2, '0');
+            const dateStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
+            const filename = `backup-${dateStr}.zip`;
+
+            // Convert response to blob
+            const blob = await res.blob();
+
+            // Create a temporary link to trigger the download
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+
+            notificationStore.showSuccess('הגיבוי נוצר בהצלחה');
+
+        } catch (err) {
+            console.error("Error downloading ZIP:", err);
+            notificationStore.showError('שגיאה בהורדת הקובץ');
+        }
+    }
 }
 
 const shiftWeightStore = new ShiftWeightStore();

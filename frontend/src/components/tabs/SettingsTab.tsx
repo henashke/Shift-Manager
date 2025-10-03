@@ -208,13 +208,15 @@ const SettingsTab: React.FC = observer(() => {
             </Box>
             <Divider/>
             <Typography style={{fontWeight: 700, fontSize: '1.2em'}}>אפשרויות נוספות</Typography>
-            <Box>
+            <Box sx={{display: 'flex', gap: 1}}>
                 <DangerousButton title={"חשב מחדש את ניקוד המשמרות"}
                                  onClick={() => setRecalculateScoresDialogOpen(true)}/>
+                <BasicButton title={"צור גיבוי של נתוני המערכת"}
+                             onClick={() => shiftWeightStore.backupSystemData()} />
+            </Box>
                 <RecalculateDialog handleConfirm={shiftStore.recalculateScores}
                                    open={recalculateScoresDialogOpen}
                                    handleDialogClose={() => setRecalculateScoresDialogOpen(false)}/>
-            </Box>
         </Container>
     );
 });

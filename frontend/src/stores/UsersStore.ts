@@ -66,6 +66,32 @@ class UserStore {
       throw e;
     }
   };
+
+  deleteUser = async (username: string) => {
+    if (!authStore.isAdmin()) {
+      notificationStore.showUnauthorizedError();
+    }
+
+    try {
+      const res = await fetch(`${config.API_BASE_URL}/users/${username}`, {
+        method: 'DELETE',
+        headers: {
+          ...authStore.getAuthHeaders()
+        }
+      });
+      if (!res.ok) {
+        throw new Error(`Failed to delete user: ${res.status}`);
+      }
+      notificationStore.showSuccess('הכונן ' + username + ' נמחק בהצלחה')
+      runInAction(() => {
+        this.users = this.users.filter(u => u.name !== username);
+      });
+    } catch (e) {
+        notificationStore.showError('שגיאה בעת מחיקת הכונן')
+        console.error('Failed to delete user', e);
+      throw e;
+    }
+  };
 }
 
 const usersStore = new UserStore();

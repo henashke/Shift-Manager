@@ -64,9 +64,20 @@ const UserList: React.FC<{ isDragged?: boolean, setIsDragged?: (val: boolean) =>
         setEditDialogOpen(false);
     };
 
-    const handleConfirmDelete = () => {
-        // Implement delete logic here
-        handleDeleteDialogClose();
+    const handleConfirmDelete = async () => {
+        if (!selectedUserName) {
+            handleDeleteDialogClose();
+            return;
+        }
+        try {
+            await usersStore.deleteUser(selectedUserName);
+            notificationStore.showSuccess('המשתמש נמחק בהצלחה');
+        } catch (e) {
+            notificationStore.showError('מחיקת המשתמש נכשלה');
+        } finally {
+            handleDeleteDialogClose();
+            setSelectedUserName(undefined);
+        }
     };
 
     return (

@@ -28,6 +28,7 @@ public class MainVerticle extends AbstractVerticle {
     private final ConstraintService constraintService;
     private final ShiftService shiftService;
     private final ShiftWeightSettingsService shiftWeightSettingsService;
+    private final BackupHandler backupHandler;
     private final ObjectMapper objectMapper;
     private JWTService jwtService;
 
@@ -41,6 +42,7 @@ public class MainVerticle extends AbstractVerticle {
             ConstraintService constraintService,
             ShiftService shiftService,
             ShiftWeightSettingsService shiftWeightSettingsService,
+            BackupHandler backupHandler,
             ObjectMapper objectMapper
     ) {
         this.port = port;
@@ -51,6 +53,7 @@ public class MainVerticle extends AbstractVerticle {
         this.constraintService = constraintService;
         this.shiftService = shiftService;
         this.shiftWeightSettingsService = shiftWeightSettingsService;
+        this.backupHandler = backupHandler;
         this.objectMapper = objectMapper;
         this.logger = LoggerFactory.getLogger(MainVerticle.class);
     }
@@ -84,7 +87,7 @@ public class MainVerticle extends AbstractVerticle {
         ShiftHandler shiftHandler = new ShiftHandler(shiftService, userService, constraintService, shiftWeightSettingsService, objectMapper);
         ShiftWeightSettingsHandler shiftWeightSettingsHandler = new ShiftWeightSettingsHandler(shiftWeightSettingsService, objectMapper);
 
-        bindRoutes(router, authHandler, userHandler, constraintHandler, shiftHandler, shiftWeightSettingsHandler);
+        bindRoutes(router, authHandler, userHandler, constraintHandler, shiftHandler, shiftWeightSettingsHandler, backupHandler);
 
         vertx.createHttpServer()
                 .requestHandler(router)
@@ -107,7 +110,7 @@ public class MainVerticle extends AbstractVerticle {
 
     private void bindRoutes(Router router,
                             AuthHandler authHandler, UserHandler userHandler, ConstraintHandler constraintHandler,
-                            ShiftHandler shiftHandler, ShiftWeightSettingsHandler shiftWeightSettingsHandler) {
+                            ShiftHandler shiftHandler, ShiftWeightSettingsHandler shiftWeightSettingsHandler, BackupHandler backupHandler) {
 
 
         // API routes first
@@ -119,11 +122,13 @@ public class MainVerticle extends AbstractVerticle {
         router.route("/api/constraints*").handler(jwtAuthHandler);
         router.route("/api/shifts*").handler(jwtAuthHandler);
         router.route("/api/shift-weight-settings*").handler(jwtAuthHandler);
-        
+        router.route("/api/backup").handler(jwtAuthHandler);
+
         userHandler.addRoutes(router);
         constraintHandler.addRoutes(router);
         shiftHandler.addRoutes(router);
         shiftWeightSettingsHandler.addRoutes(router);
+        backupHandler.addRoutes(router);
 
         // Serve static files from the 'static' directory
         router.route("/*").handler(StaticHandler.create("static"));
